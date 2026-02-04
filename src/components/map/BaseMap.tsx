@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMap } from './MapProvider';
 
 // Set Mapbox token
@@ -98,8 +97,8 @@ export function BaseMap({
   }, [initialCenter, initialZoom, setMap, onMove, onClick]);
 
   return (
-    <div className={`relative ${className}`}>
-      <div ref={mapContainer} className="absolute inset-0" />
+    <div className={`relative ${className}`} style={{ minHeight: '400px' }}>
+      <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
       {!mapboxgl.accessToken && (
         <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/90 z-10">
           <div className="text-center p-6 max-w-md">
