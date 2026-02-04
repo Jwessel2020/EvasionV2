@@ -13,6 +13,16 @@ interface FriendMarkerProps {
 export function FriendMarker({ friend, onClick }: FriendMarkerProps) {
   const { map } = useMap();
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const onClickRef = useRef(onClick);
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'FriendMarker.tsx:render',message:'FriendMarker RENDER',data:{friendId:friend.id,hasMarker:!!markerRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'S',runId:'post-fix-8'})}).catch(()=>{});
+  // #endregion
+
+  // Keep the callback ref up to date without triggering re-renders
+  useEffect(() => {
+    onClickRef.current = onClick;
+  }, [onClick]);
 
   useEffect(() => {
     if (!map) return;
@@ -39,7 +49,12 @@ export function FriendMarker({ friend, onClick }: FriendMarkerProps) {
       </div>
     `;
 
-    el.addEventListener('click', () => onClick?.(friend));
+    el.addEventListener('click', () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'FriendMarker.tsx:click',message:'FRIEND MARKER CLICKED',data:{friendId:friend.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'S',runId:'post-fix-8'})}).catch(()=>{});
+      // #endregion
+      onClickRef.current?.(friend);
+    });
 
     const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
       .setLngLat([friend.location.longitude, friend.location.latitude])
@@ -50,7 +65,7 @@ export function FriendMarker({ friend, onClick }: FriendMarkerProps) {
     return () => {
       marker.remove();
     };
-  }, [map, friend, onClick]);
+  }, [map, friend.id, friend.avatarUrl, friend.displayName, friend.heading, friend.speed, friend.location.longitude, friend.location.latitude]);
 
   // Update position when it changes
   useEffect(() => {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { 
   MessageSquare, 
   Users, 
@@ -237,7 +238,18 @@ function GroupCard({ group }: { group: Group }) {
   );
 }
 
+const sortLabels: Record<string, string> = {
+  hot: 'Trending',
+  newest: 'New',
+  top: 'Top',
+};
+
 export default function CommunityHomePage() {
+  const searchParams = useSearchParams();
+  const sortParam = searchParams.get('sort') || 'hot';
+  const searchQuery = searchParams.get('search') || '';
+  const tagFilter = searchParams.get('tag') || '';
+  
   const [threads, setThreads] = useState<Thread[]>([]);
   const [boards, setBoards] = useState<Board[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -245,9 +257,30 @@ export default function CommunityHomePage() {
 
   useEffect(() => {
     async function fetchData() {
+      setLoading(true);
       try {
+        // Build threads query
+        const threadsParams = new URLSearchParams();
+        threadsParams.set('limit', '10');
+        
+        // Map sort param to API sort
+        const sortMapping: Record<string, string> = {
+          hot: 'hot',
+          newest: 'newest',
+          top: 'top',
+        };
+        threadsParams.set('sort', sortMapping[sortParam] || 'hot');
+        
+        if (searchQuery) {
+          threadsParams.set('search', searchQuery);
+        }
+        
+        if (tagFilter) {
+          threadsParams.set('tag', tagFilter);
+        }
+
         const [threadsRes, boardsRes, groupsRes] = await Promise.all([
-          fetch('/api/forum/threads?sort=hot&limit=10'),
+          fetch(`/api/forum/threads?${threadsParams}`),
           fetch('/api/forum/boards?type=board&limit=6'),
           fetch('/api/forum/groups?featured=true&limit=4'),
         ]);
@@ -269,7 +302,7 @@ export default function CommunityHomePage() {
     }
 
     fetchData();
-  }, []);
+  }, [sortParam, searchQuery, tagFilter]);
 
   if (loading) {
     return (
@@ -342,12 +375,14 @@ export default function CommunityHomePage() {
         </section>
       )}
 
-      {/* Trending Threads */}
+      {/* Threads */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <Flame size={20} className="text-orange-500" />
-            Trending Discussions
+            {searchQuery ? `Search: "${searchQuery}"` : 
+             tagFilter ? `#${tagFilter}` : 
+             `${sortLabels[sortParam] || 'Trending'} Discussions`}
           </h2>
         </div>
         {threads.length > 0 ? (

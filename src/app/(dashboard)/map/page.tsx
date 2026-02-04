@@ -68,7 +68,7 @@ export default function MapPage() {
   const [showFriends, setShowFriends] = useState(true);
   const [showAlerts, setShowAlerts] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [showSpeedTraps, setShowSpeedTraps] = useState(true); // Show speed traps by default
+  const [showSpeedTraps, setShowSpeedTraps] = useState(true); // Show speed traps by default - v6
   const [heatmapData, setHeatmapData] = useState<GeoJSON.FeatureCollection | null>(null);
   const [selectedFriend, setSelectedFriend] = useState<LiveUserPin | null>(null);
   const [selectedTrap, setSelectedTrap] = useState<Record<string, unknown> | null>(null);
@@ -100,6 +100,11 @@ export default function MapPage() {
   const initialCenter: [number, number] = location 
     ? [location.longitude, location.latitude] 
     : [-118.2437, 34.0522]; // LA default
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MapPage.tsx:render',message:'MAP_PAGE_RENDER_V6',data:{showSpeedTraps,selectedTrap:!!selectedTrap,selectedFriend:!!selectedFriend,codeVersion:'v6-feb4'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F',runId:'post-fix-6'})}).catch(()=>{});
+  console.log('[DEBUG-V6] MapPage render - showSpeedTraps:', showSpeedTraps);
+  // #endregion
 
   const handleToggleBroadcast = useCallback(() => {
     setBroadcasting(!isBroadcasting);
@@ -155,6 +160,10 @@ export default function MapPage() {
             visible={showSpeedTraps}
             minStops={5}
             onTrapClick={(props) => {
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MapPage.tsx:onTrapClick',message:'TRAP PIN CLICKED',data:{props:JSON.stringify(props).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'R',runId:'post-fix-7'})}).catch(()=>{});
+              console.log('[DEBUG-V7] Trap pin clicked:', props);
+              // #endregion
               setSelectedTrap(props);
               setSelectedFriend(null); // Close other panels
             }}
@@ -206,7 +215,12 @@ export default function MapPage() {
           <Button
             variant={showSpeedTraps ? 'danger' : 'outline'}
             size="sm"
-            onClick={() => setShowSpeedTraps(!showSpeedTraps)}
+            onClick={() => {
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MapPage.tsx:toggleSpeedTraps',message:'Toggle clicked',data:{currentValue:showSpeedTraps,newValue:!showSpeedTraps},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'K',runId:'post-fix-5'})}).catch(()=>{});
+              // #endregion
+              setShowSpeedTraps(!showSpeedTraps);
+            }}
             className="shadow-lg"
             title="Show known speed trap locations based on historical data"
           >

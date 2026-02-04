@@ -62,6 +62,11 @@ export function SpeedTrapLayer({
   const abortControllerRef = useRef<AbortController | null>(null);
   const onTrapClickRef = useRef(onTrapClick);
   
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:render',message:'SPEEDTRAP_RENDER_V6',data:{visible,layersAdded,imageLoaded,hasMap:!!map,isLoaded,codeVersion:'v6-feb4'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F',runId:'post-fix-7'})}).catch(()=>{});
+  console.log('[DEBUG-V6] SpeedTrapLayer render - visible:', visible);
+  // #endregion
+  
   // Keep the callback ref up to date without triggering re-renders
   useEffect(() => {
     onTrapClickRef.current = onTrapClick;
@@ -105,11 +110,20 @@ export function SpeedTrapLayer({
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:fetchData',message:'API response',data:{success:json.success,featureCount:json.data?.features?.length,meta:json.meta},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
-      if (json.success) {
+      if (json.success && json.data?.features?.length > 0) {
+        // Only update data if we got results - don't clear existing markers
+        // when zoomed into an area with no traps
         const source = map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
         if (source) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:setData',message:'Setting source data',data:{featureCount:json.data?.features?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G',runId:'post-fix-7'})}).catch(()=>{});
+          // #endregion
           source.setData(json.data);
         }
+      } else if (json.success && json.data?.features?.length === 0) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:setData',message:'Skipping empty data - keeping existing markers',data:{featureCount:0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G',runId:'post-fix-7'})}).catch(()=>{});
+        // #endregion
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') return;
@@ -408,13 +422,27 @@ export function SpeedTrapLayer({
       }
     };
 
+    // Global click listener to track ALL clicks on the map
+    const handleGlobalClick = (e: mapboxgl.MapMouseEvent) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:handleGlobalClick',message:'GLOBAL map click detected',data:{point:e.point,lngLat:{lng:e.lngLat.lng,lat:e.lngLat.lat}},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'I',runId:'post-fix-7'})}).catch(()=>{});
+      // #endregion
+    };
+    map.on('click', handleGlobalClick);
+
     // Click handler - uses ref to avoid triggering re-init when callback changes
     const handleClick = (e: mapboxgl.MapLayerMouseEvent) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:handleClick',message:'LAYER click handler INVOKED',data:{point:e.point},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E',runId:'post-fix-7'})}).catch(()=>{});
+      // #endregion
       try {
         const features = map.queryRenderedFeatures(e.point, { layers: [LAYER_ID] });
         if (!features.length) return;
         
         const properties = features[0].properties;
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:handleClick',message:'Feature found, calling callback',data:{hasCallback:!!onTrapClickRef.current,stopCount:properties?.stopCount},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E',runId:'post-fix-2'})}).catch(()=>{});
+        // #endregion
         if (onTrapClickRef.current && properties) {
           // Parse any stringified arrays
           const parsed = { ...properties };
@@ -425,7 +453,13 @@ export function SpeedTrapLayer({
               // Keep as string
             }
           }
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:handleClick',message:'BEFORE calling onTrapClick callback',data:{stopCount:parsed.stopCount},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E',runId:'post-fix-2'})}).catch(()=>{});
+          // #endregion
           onTrapClickRef.current(parsed);
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:handleClick',message:'AFTER calling onTrapClick callback',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E',runId:'post-fix-2'})}).catch(()=>{});
+          // #endregion
         }
       } catch {
         // Ignore errors
@@ -449,21 +483,33 @@ export function SpeedTrapLayer({
     // Add event listeners
     const setupEvents = () => {
       try {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:setupEvents',message:'Setting up click handler',data:{layerId:LAYER_ID,hasLayer:!!map.getLayer(LAYER_ID)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'J',runId:'post-fix-7'})}).catch(()=>{});
+        // #endregion
         map.on('click', LAYER_ID, handleClick);
         map.on('mouseenter', LAYER_ID, handleMouseEnter);
         map.on('mouseleave', LAYER_ID, handleMouseLeave);
-      } catch {
-        // Ignore errors
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:setupEvents',message:'Click handler registered successfully',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'J',runId:'post-fix-7'})}).catch(()=>{});
+        // #endregion
+      } catch (err) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:setupEvents',message:'Click handler setup FAILED',data:{error:String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'J',runId:'post-fix-7'})}).catch(()=>{});
+        // #endregion
       }
     };
     
     setTimeout(setupEvents, 100);
 
     return () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:cleanup',message:'SpeedTrapLayer CLEANUP triggered',data:{hasMapRef:!!mapRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D',runId:'post-fix-2'})}).catch(()=>{});
+      // #endregion
       const currentMap = mapRef.current;
       if (!currentMap) return;
 
       try {
+        currentMap.off('click', handleGlobalClick);
         currentMap.off('click', LAYER_ID, handleClick);
         currentMap.off('mouseenter', LAYER_ID, handleMouseEnter);
         currentMap.off('mouseleave', LAYER_ID, handleMouseLeave);
@@ -513,6 +559,9 @@ export function SpeedTrapLayer({
 
   // Update visibility
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:visibilityEffect',message:'Visibility effect triggered',data:{hasMap:!!map,layersAdded,visible},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H',runId:'post-fix-7'})}).catch(()=>{});
+    // #endregion
     if (!map || !layersAdded) return;
 
     try {
@@ -527,13 +576,20 @@ export function SpeedTrapLayer({
         LABEL_LAYER_ID,
       ];
 
+      let updatedCount = 0;
       layersToUpdate.forEach(layerId => {
         if (map.getLayer(layerId)) {
           map.setLayoutProperty(layerId, 'visibility', visibility);
+          updatedCount++;
         }
       });
-    } catch {
-      // Ignore errors
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:visibilitySet',message:'Visibility SET completed',data:{visibility,updatedCount,layersChecked:layersToUpdate.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'L',runId:'post-fix-7'})}).catch(()=>{});
+      // #endregion
+    } catch (err) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:visibilityError',message:'Visibility set error',data:{error:String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'L',runId:'post-fix-7'})}).catch(()=>{});
+      // #endregion
     }
   }, [map, layersAdded, visible]);
 

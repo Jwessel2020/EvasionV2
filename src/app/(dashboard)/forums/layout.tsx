@@ -2,7 +2,7 @@
 
 import { ReactNode, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { 
   Home, 
   MessageSquare, 
@@ -38,6 +38,8 @@ const quickFilters = [
 
 export default function ForumsLayout({ children }: ForumsLayoutProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentSort = searchParams.get('sort');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -128,17 +130,26 @@ export default function ForumsLayout({ children }: ForumsLayoutProps) {
             <p className="px-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
               Quick Filters
             </p>
-            {quickFilters.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
-              >
-                <item.icon size={16} />
-                {item.label}
-              </Link>
-            ))}
+            {quickFilters.map((item) => {
+              const sortValue = item.href.split('sort=')[1]?.split('&')[0];
+              const isActive = pathname === '/forums' && currentSort === sortValue;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                    isActive 
+                      ? 'text-red-400 bg-red-500/10'
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                  )}
+                >
+                  <item.icon size={16} />
+                  {item.label}
+                </Link>
+              );
+            })}
 
             <div className="h-px bg-zinc-800 my-4" />
 

@@ -30,6 +30,9 @@ export function BaseMap({
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BaseMap.tsx:useEffect',message:'BaseMap effect triggered',data:{hasContainer:!!mapContainer.current,hasMapRef:!!mapRef.current,initialCenter,initialZoom},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A',runId:'post-fix'})}).catch(()=>{});
+    // #endregion
     if (!mapContainer.current || mapRef.current) return;
 
     // Check if token exists
@@ -90,11 +93,15 @@ export function BaseMap({
     });
 
     return () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BaseMap.tsx:cleanup',message:'BaseMap CLEANUP - destroying map',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A',runId:'post-fix'})}).catch(()=>{});
+      // #endregion
       setMap(null);
       map.remove();
       mapRef.current = null;
     };
-  }, [initialCenter, initialZoom, setMap, onMove, onClick]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setMap]); // Only depend on setMap - initialCenter/initialZoom are for initial render only
 
   return (
     <div className={`relative ${className}`} style={{ minHeight: '400px' }}>

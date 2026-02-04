@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   MessageSquare, 
   HelpCircle, 
@@ -42,13 +42,16 @@ const threadTypes = [
 
 export default function NewPostPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedGroup = searchParams.get('group');
+  
   const [loading, setLoading] = useState(false);
   const [boards, setBoards] = useState<Board[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   
   // Form state
   const [type, setType] = useState('discussion');
-  const [destination, setDestination] = useState<'board' | 'group'>('board');
+  const [destination, setDestination] = useState<'board' | 'group'>(preselectedGroup ? 'group' : 'board');
   const [boardId, setBoardId] = useState('');
   const [groupId, setGroupId] = useState('');
   const [title, setTitle] = useState('');
@@ -79,14 +82,26 @@ export default function NewPostPage() {
         ]);
         
         if (boardsData.success) setBoards(boardsData.data);
-        if (groupsData.success) setGroups(groupsData.data);
+        if (groupsData.success) {
+          setGroups(groupsData.data);
+          
+          // Pre-select group if provided in URL
+          if (preselectedGroup) {
+            const matchingGroup = groupsData.data.find(
+              (g: Group) => g.slug === preselectedGroup || g._id === preselectedGroup
+            );
+            if (matchingGroup) {
+              setGroupId(matchingGroup._id);
+            }
+          }
+        }
       } catch (error) {
         console.error('Error fetching destinations:', error);
       }
     }
     
     fetchDestinations();
-  }, []);
+  }, [preselectedGroup]);
 
   const handleAddTag = () => {
     const tag = tagInput.trim().toLowerCase();

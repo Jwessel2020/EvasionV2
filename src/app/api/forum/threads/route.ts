@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const boardId = searchParams.get('board');
     const boardSlug = searchParams.get('boardSlug');
     const groupId = searchParams.get('group');
+    const groupSlug = searchParams.get('groupSlug');
     const authorId = searchParams.get('author');
     const type = searchParams.get('type');
     const search = searchParams.get('search');
@@ -41,8 +42,14 @@ export async function GET(request: NextRequest) {
       }
     }
     
+    // Group filter
     if (groupId) {
       query.group = groupId;
+    } else if (groupSlug) {
+      const group = await Group.findOne({ slug: groupSlug });
+      if (group) {
+        query.group = group._id;
+      }
     }
     
     if (authorId) {

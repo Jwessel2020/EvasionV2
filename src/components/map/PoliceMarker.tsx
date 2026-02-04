@@ -22,6 +22,16 @@ const REPORT_TYPE_LABELS: Record<string, string> = {
 export function PoliceMarker({ alert, onClick }: PoliceMarkerProps) {
   const { map } = useMap();
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const onClickRef = useRef(onClick);
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PoliceMarker.tsx:render',message:'PoliceMarker RENDER',data:{alertId:alert.id,hasMarker:!!markerRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'T',runId:'post-fix-8'})}).catch(()=>{});
+  // #endregion
+
+  // Keep the callback ref up to date without triggering re-renders
+  useEffect(() => {
+    onClickRef.current = onClick;
+  }, [onClick]);
 
   useEffect(() => {
     if (!map) return;
@@ -43,7 +53,12 @@ export function PoliceMarker({ alert, onClick }: PoliceMarkerProps) {
       </div>
     `;
 
-    el.addEventListener('click', () => onClick?.(alert));
+    el.addEventListener('click', () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PoliceMarker.tsx:click',message:'POLICE MARKER CLICKED',data:{alertId:alert.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'T',runId:'post-fix-8'})}).catch(()=>{});
+      // #endregion
+      onClickRef.current?.(alert);
+    });
 
     const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
       .setLngLat([alert.location.longitude, alert.location.latitude])
@@ -54,7 +69,7 @@ export function PoliceMarker({ alert, onClick }: PoliceMarkerProps) {
     return () => {
       marker.remove();
     };
-  }, [map, alert, onClick]);
+  }, [map, alert.id, alert.reportType, alert.reportedAt, alert.confirmations, alert.location.longitude, alert.location.latitude]);
 
   return null;
 }

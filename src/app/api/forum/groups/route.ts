@@ -162,6 +162,14 @@ export async function POST(request: NextRequest) {
       counter++;
     }
     
+    // Convert simple string rules to objects with title/description format
+    const formattedRules = rules.map((rule: string | { title: string; description: string }) => {
+      if (typeof rule === 'string') {
+        return { title: rule, description: '' };
+      }
+      return rule;
+    });
+
     const group = new Group({
       name,
       slug,
@@ -180,7 +188,7 @@ export async function POST(request: NextRequest) {
         role: 'owner',
         joinedAt: new Date(),
       }],
-      rules,
+      rules: formattedRules,
       settings: {
         allowMemberInvites: settings?.allowMemberInvites ?? true,
         allowMemberPosts: settings?.allowMemberPosts ?? true,

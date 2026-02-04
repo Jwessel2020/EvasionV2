@@ -62,7 +62,7 @@ export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showPoints, setShowPoints] = useState(true);
-  const [showSpeedTraps, setShowSpeedTraps] = useState(false);
+  const [showSpeedTraps, setShowSpeedTraps] = useState(true); // Show speed traps by default
   const [lowDetailMode, setLowDetailMode] = useState(false);
   const [showAllPoints, setShowAllPoints] = useState(false);
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
