@@ -42,8 +42,10 @@ export async function middleware(request: NextRequest) {
   );
   
   // Get session from cookie (simplified check)
+  // Also check for dev auth cookie in development
   const hasSession = request.cookies.has('sb-access-token') || 
-                     request.cookies.get('sb-localhost-auth-token');
+                     request.cookies.get('sb-localhost-auth-token') ||
+                     request.cookies.has('evasion-dev-auth');
   
   // Redirect to login if accessing protected route without session
   if (isProtectedRoute && !hasSession) {

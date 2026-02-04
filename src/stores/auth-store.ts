@@ -28,19 +28,31 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
       
       // Actions
-      setUser: (user) => set({
-        user,
-        isAuthenticated: !!user,
-        isLoading: false,
-      }),
+      setUser: (user) => {
+        // Set dev cookie for middleware
+        if (typeof document !== 'undefined' && user) {
+          document.cookie = 'evasion-dev-auth=true; path=/; max-age=86400';
+        }
+        set({
+          user,
+          isAuthenticated: !!user,
+          isLoading: false,
+        });
+      },
       
       setLoading: (isLoading) => set({ isLoading }),
       
-      logout: () => set({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-      }),
+      logout: () => {
+        // Clear dev cookie
+        if (typeof document !== 'undefined') {
+          document.cookie = 'evasion-dev-auth=; path=/; max-age=0';
+        }
+        set({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+      },
     }),
     {
       name: 'evasion-auth',
