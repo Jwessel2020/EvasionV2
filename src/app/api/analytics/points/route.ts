@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
     
     const boundsStr = searchParams.get('bounds');
     const zoom = parseInt(searchParams.get('zoom') || '10');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '5000'), 10000);
+    const noSampling = searchParams.get('noSampling') === 'true';
+    const limit = Math.min(parseInt(searchParams.get('limit') || '5000'), noSampling ? 50000 : 10000);
     const violationType = searchParams.get('violationType');
     const hasAlcohol = searchParams.get('hasAlcohol');
     const hasAccident = searchParams.get('hasAccident');
@@ -91,27 +92,31 @@ export async function GET(request: NextRequest) {
     let samplingClause = '';
     let dynamicLimit = limit;
     
-    if (zoom < 6) {
-      // Very zoomed out - sparse, evenly distributed sample
-      samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 500) = 0'; // ~0.2%
-      dynamicLimit = 2000;
-    } else if (zoom < 8) {
-      samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 200) = 0'; // ~0.5%
-      dynamicLimit = 3000;
-    } else if (zoom < 10) {
-      samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 50) = 0'; // ~2%
-      dynamicLimit = 5000;
-    } else if (zoom < 11) {
-      samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 20) = 0'; // ~5%
-      dynamicLimit = 6000;
-    } else if (zoom < 12) {
-      samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 8) = 0'; // ~12.5%
-      dynamicLimit = 8000;
-    } else if (zoom < 13) {
-      samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 4) = 0'; // ~25%
-      dynamicLimit = 10000;
+    // Skip sampling if noSampling is requested (show all points mode)
+    if (!noSampling) {
+      if (zoom < 6) {
+        // Very zoomed out - sparse, evenly distributed sample
+        samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 500) = 0'; // ~0.2%
+        dynamicLimit = 2000;
+      } else if (zoom < 8) {
+        samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 200) = 0'; // ~0.5%
+        dynamicLimit = 3000;
+      } else if (zoom < 10) {
+        samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 50) = 0'; // ~2%
+        dynamicLimit = 5000;
+      } else if (zoom < 11) {
+        samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 20) = 0'; // ~5%
+        dynamicLimit = 6000;
+      } else if (zoom < 12) {
+        samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 8) = 0'; // ~12.5%
+        dynamicLimit = 8000;
+      } else if (zoom < 13) {
+        samplingClause = 'AND MOD(ABS(HASHTEXT(id::text)), 4) = 0'; // ~25%
+        dynamicLimit = 10000;
+      }
+      // zoom >= 13: no sampling, show all points in view
     }
-    // zoom >= 13: no sampling, show all points in view
+    // noSampling = true: return all points up to limit (for "show all" mode)
 
     const query = `
       SELECT 

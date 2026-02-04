@@ -7,6 +7,7 @@ import type mapboxgl from 'mapbox-gl';
 interface PoliceStopsLayerProps {
   visible?: boolean;
   lowDetailMode?: boolean; // Force clustered view regardless of zoom
+  showAllPoints?: boolean; // Show all points unclustered (performance warning)
   filters?: {
     violationType?: string | null;
     hasAlcohol?: boolean | null;
@@ -26,6 +27,7 @@ const UNCLUSTERED_LAYER_ID = 'police-stops-unclustered';
 export function PoliceStopsLayer({
   visible = true,
   lowDetailMode = false,
+  showAllPoints = false,
   filters = {},
   onStopClick,
 }: PoliceStopsLayerProps) {
@@ -53,6 +55,12 @@ export function PoliceStopsLayer({
       const params = new URLSearchParams();
       params.set('bounds', `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`);
       params.set('zoom', zoom.toString());
+      
+      // When showAllPoints is true, request all data without sampling
+      if (showAllPoints) {
+        params.set('noSampling', 'true');
+        params.set('limit', '50000'); // Higher limit for all points view
+      }
       
       if (filters.violationType) params.set('violationType', filters.violationType);
       if (filters.hasAlcohol !== null && filters.hasAlcohol !== undefined) {
@@ -88,7 +96,7 @@ export function PoliceStopsLayer({
       if (error instanceof Error && error.name === 'AbortError') return;
       console.warn('Error fetching police stops:', error);
     }
-  }, [map, filters]);
+  }, [map, filters, showAllPoints]);
 
   // Initialize layers
   useEffect(() => {
@@ -379,51 +387,39 @@ export function PoliceStopsLayer({
     };
   }, [map, layersAdded, fetchData]);
 
-  // Update visibility and low detail mode
+  // Update visibility based on mode
   useEffect(() => {
     if (!map || !layersAdded) return;
 
     try {
-      const visibility = visible ? 'visible' : 'none';
-      // In low detail mode, hide individual points
+      // showAllPoints: hide clusters, show all individual points
+      // lowDetailMode: show clusters, hide individual points
+      // default: show both (clusters auto-hide at high zoom)
+      
+      const clusterVisibility = visible && !showAllPoints ? 'visible' : 'none';
       const pointsVisibility = visible && !lowDetailMode ? 'visible' : 'none';
       
       if (map.getLayer(CLUSTER_LAYER_ID)) {
-        map.setLayoutProperty(CLUSTER_LAYER_ID, 'visibility', visibility);
+        map.setLayoutProperty(CLUSTER_LAYER_ID, 'visibility', clusterVisibility);
       }
       if (map.getLayer(CLUSTER_COUNT_LAYER_ID)) {
-        map.setLayoutProperty(CLUSTER_COUNT_LAYER_ID, 'visibility', visibility);
+        map.setLayoutProperty(CLUSTER_COUNT_LAYER_ID, 'visibility', clusterVisibility);
       }
       if (map.getLayer(UNCLUSTERED_LAYER_ID)) {
         map.setLayoutProperty(UNCLUSTERED_LAYER_ID, 'visibility', pointsVisibility);
+        
+        // When showAllPoints is true, remove the minzoom restriction
+        if (showAllPoints) {
+          map.setLayerZoomRange(UNCLUSTERED_LAYER_ID, 0, 24);
+        } else {
+          // Restore normal minzoom (points visible at zoom 13+)
+          map.setLayerZoomRange(UNCLUSTERED_LAYER_ID, 13, 24);
+        }
       }
     } catch {
       // Ignore errors
     }
-  }, [map, layersAdded, visible, lowDetailMode]);
-  
-  // Handle lowDetailMode changes - need to update source cluster settings
-  useEffect(() => {
-    if (!map || !layersAdded) return;
-    
-    try {
-      // Get current data from source
-      const source = map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
-      if (!source) return;
-      
-      // Mapbox doesn't allow changing cluster settings on existing source
-      // So we need to get data, remove source/layers, and recreate
-      // For now, just toggle visibility of unclustered layer
-      // The source will be recreated on next mount with correct settings
-      
-      const pointsVisibility = visible && !lowDetailMode ? 'visible' : 'none';
-      if (map.getLayer(UNCLUSTERED_LAYER_ID)) {
-        map.setLayoutProperty(UNCLUSTERED_LAYER_ID, 'visibility', pointsVisibility);
-      }
-    } catch {
-      // Ignore errors
-    }
-  }, [map, layersAdded, lowDetailMode, visible]);
+  }, [map, layersAdded, visible, lowDetailMode, showAllPoints]);
 
   // Refetch when filters change
   useEffect(() => {

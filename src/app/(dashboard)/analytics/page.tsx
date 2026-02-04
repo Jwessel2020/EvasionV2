@@ -61,6 +61,7 @@ export default function AnalyticsPage() {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showPoints, setShowPoints] = useState(true);
   const [lowDetailMode, setLowDetailMode] = useState(false);
+  const [showAllPoints, setShowAllPoints] = useState(false);
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [selectedStop, setSelectedStop] = useState<Record<string, unknown> | null>(null);
@@ -260,13 +261,16 @@ export default function AnalyticsPage() {
               Points
             </Button>
             <Button
-              variant={lowDetailMode ? 'secondary' : 'outline'}
+              variant={showAllPoints ? 'danger' : 'outline'}
               size="sm"
-              onClick={() => setLowDetailMode(!lowDetailMode)}
-              title="Always show clusters, never individual points"
+              onClick={() => {
+                setShowAllPoints(!showAllPoints);
+                if (!showAllPoints) setLowDetailMode(false); // Can't have both
+              }}
+              title="Show all points without clustering (may be slow)"
             >
-              <Layers size={16} className="mr-1" />
-              {lowDetailMode ? 'Clusters Only' : 'Auto Detail'}
+              <MapPin size={16} className="mr-1" />
+              {showAllPoints ? 'All Points' : 'Clustered'}
             </Button>
             <Button
               variant={showHeatmap ? 'secondary' : 'outline'}
@@ -291,6 +295,7 @@ export default function AnalyticsPage() {
               <PoliceStopsLayer
                 visible={showPoints}
                 lowDetailMode={lowDetailMode}
+                showAllPoints={showAllPoints}
                 filters={mapFilters}
                 onStopClick={(props) => setSelectedStop(props)}
               />
