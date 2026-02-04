@@ -1,13 +1,25 @@
 # Evasion V2 - Development Checkpoint
 
-## Current Status: Phase 1 - Foundation Complete ✅
+## Current Status: Phase 2 - Mapping System Complete ✅
 
 **Date:** February 4, 2026  
-**Version:** 0.1.0
+**Version:** 0.2.0
 
 ---
 
 ## What's Been Built
+
+### NEW: Mapping System (Phase 2)
+- [x] Mapbox GL JS integration with dark theme
+- [x] Live map page (`/map`) with friend pins
+- [x] Police alert markers with pulsing animation
+- [x] Route discovery page (`/routes`) with filters
+- [x] Route creation interface (`/routes/create`)
+- [x] Click-to-draw route building
+- [x] API endpoints for routes, locations, alerts
+- [x] Socket.io server for real-time updates
+- [x] Location broadcasting hooks
+- [x] Alert reporting modal
 
 ### 1. Project Infrastructure
 - [x] Next.js 14 with App Router
@@ -84,21 +96,21 @@ src/
 
 ---
 
-## Next Steps (Phase 2)
+## Next Steps (Phase 3)
 
 ### Immediate Tasks
-1. [ ] Run Prisma migrations to create database tables
-2. [ ] Set up Supabase project and configure environment
-3. [ ] Test authentication flow end-to-end
-4. [ ] Integrate Mapbox and create base map component
+1. [ ] Get Mapbox token and test map rendering
+2. [ ] Set up Supabase project for production auth
+3. [ ] Run Prisma migrations against PostgreSQL
+4. [ ] Test real-time location broadcasting
 
 ### Feature Development
-1. [ ] Complete vehicle CRUD operations
+1. [ ] Complete vehicle CRUD (garage feature)
 2. [ ] Implement friend request system
-3. [ ] Build route creation interface
-4. [ ] Set up Socket.io for real-time features
-5. [ ] Create event management system
-6. [ ] Build forum functionality
+3. [ ] Create event management system
+4. [ ] Build forum functionality
+5. [ ] Add route ratings and reviews
+6. [ ] User profile pages
 
 ---
 
