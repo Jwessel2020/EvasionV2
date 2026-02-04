@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { MapProvider, BaseMap, HeatmapLayer, PoliceStopsLayer, MapFilterPanel, type MapFilters } from '@/components/map';
-import { StatsCard, TimeChart, TopList } from '@/components/analytics';
+import { StatsCard, TimeChart, TopList, SpeedAnalytics } from '@/components/analytics';
 import { Button, Card, CardContent } from '@/components/ui';
 import {
   Activity,
@@ -420,6 +420,11 @@ export default function AnalyticsPage() {
           items={stats?.vehicleMakes.map(v => ({ name: v.make, count: v.count })) ?? []}
           maxItems={7}
         />
+      </div>
+
+      {/* Speed Violation Analytics Section */}
+      <div className="border-t border-zinc-800 pt-8">
+        <SpeedAnalytics />
       </div>
 
       {/* Data Notice */}

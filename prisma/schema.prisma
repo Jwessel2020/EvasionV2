@@ -549,6 +549,13 @@ model TrafficViolation {
   // Demographics (for pattern analysis)
   driverState     String?   @map("driver_state") @db.VarChar(10)
   
+  // Speed violation analysis (computed from description/charge)
+  isSpeedRelated    Boolean   @default(false) @map("is_speed_related")
+  recordedSpeed     Int?      @map("recorded_speed")  // Parsed from description (e.g., 84 in "84 MPH")
+  postedLimit       Int?      @map("posted_limit")    // Parsed from description (e.g., 55 in "55 MPH ZONE")
+  speedOver         Int?      @map("speed_over")      // Calculated: recordedSpeed - postedLimit
+  detectionMethod   String?   @map("detection_method") @db.VarChar(20) // Normalized: radar, laser, vascar, patrol
+  
   // Metadata
   createdAt       DateTime  @default(now()) @map("created_at")
 
@@ -559,6 +566,9 @@ model TrafficViolation {
   @@index([violationType])
   @@index([alcohol])
   @@index([accident])
+  @@index([isSpeedRelated])
+  @@index([recordedSpeed])
+  @@index([detectionMethod])
   @@map("traffic_violations")
 }
 
