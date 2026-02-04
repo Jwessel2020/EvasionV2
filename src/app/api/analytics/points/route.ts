@@ -16,9 +16,11 @@ import prisma from '@/lib/prisma';
  * - hourStart: 0-23
  * - hourEnd: 0-23
  * - dayOfWeek: 0-6
+ * - year: filter by year (e.g., 2023)
  * - speedOnly: "true" to filter only speed violations
  * - detectionMethod: "radar" | "laser" | "vascar" | "patrol"
  * - minSpeedOver: minimum speed over limit (e.g., 10, 15, 20)
+ * - speedTrapsOnly: "true" to show only likely speed trap locations
  */
 export async function GET(request: NextRequest) {
   try {
@@ -34,10 +36,14 @@ export async function GET(request: NextRequest) {
     const hourStart = searchParams.get('hourStart') ? parseInt(searchParams.get('hourStart')!) : null;
     const hourEnd = searchParams.get('hourEnd') ? parseInt(searchParams.get('hourEnd')!) : null;
     const dayOfWeek = searchParams.get('dayOfWeek') ? parseInt(searchParams.get('dayOfWeek')!) : null;
+    // Year filter
+    const year = searchParams.get('year') ? parseInt(searchParams.get('year')!) : null;
+    
     // Speed-related filters
     const speedOnly = searchParams.get('speedOnly') === 'true';
     const detectionMethod = searchParams.get('detectionMethod');
     const minSpeedOver = searchParams.get('minSpeedOver') ? parseInt(searchParams.get('minSpeedOver')!) : null;
+    const speedTrapsOnly = searchParams.get('speedTrapsOnly') === 'true';
 
     // Build WHERE conditions
     const conditions: string[] = [];
@@ -91,6 +97,12 @@ export async function GET(request: NextRequest) {
       params.push(dayOfWeek);
     }
 
+    // Year filter
+    if (year !== null) {
+      conditions.push(`EXTRACT(YEAR FROM stop_date) = $${paramIndex++}`);
+      params.push(year);
+    }
+
     // Speed-only filter (filters by is_speed_related column)
     if (speedOnly) {
       conditions.push(`is_speed_related = true`);
@@ -106,6 +118,22 @@ export async function GET(request: NextRequest) {
     if (minSpeedOver !== null) {
       conditions.push(`speed_over >= $${paramIndex++}`);
       params.push(minSpeedOver);
+    }
+
+    // Speed trap detection - stationary detection methods only
+    if (speedTrapsOnly) {
+      // Speed traps are typically:
+      // - Stationary radar (E, F, G, H) or laser (Q, R)
+      // - Speed-related violations
+      conditions.push(`is_speed_related = true`);
+      conditions.push(`(
+        arrest_type LIKE 'E -%' OR 
+        arrest_type LIKE 'F -%' OR 
+        arrest_type LIKE 'G -%' OR 
+        arrest_type LIKE 'H -%' OR 
+        arrest_type LIKE 'Q -%' OR 
+        arrest_type LIKE 'R -%'
+      )`);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

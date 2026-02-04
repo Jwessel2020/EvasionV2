@@ -73,9 +73,11 @@ export default function AnalyticsPage() {
     hasAccident: null,
     hourStart: null,
     hourEnd: null,
+    year: null,
     speedOnly: null,
     detectionMethod: null,
     minSpeedOver: null,
+    speedTrapsOnly: null,
     dayOfWeek: null,
   });
   

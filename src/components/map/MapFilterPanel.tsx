@@ -14,6 +14,8 @@ import {
   Gauge,
   Zap,
   Radio,
+  MapPin,
+  Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,10 +26,12 @@ export interface MapFilters {
   hourStart: number | null;
   hourEnd: number | null;
   dayOfWeek: number | null;
+  year: number | null;
   // Speed-related filters
   speedOnly: boolean | null;
   detectionMethod: string | null; // radar, laser, vascar, patrol
   minSpeedOver: number | null;
+  speedTrapsOnly: boolean | null; // Show only likely speed trap locations
 }
 
 interface MapFilterPanelProps {
@@ -80,6 +84,16 @@ const SPEED_OVER_OPTIONS = [
   { value: 30, label: '30+ mph over' },
 ];
 
+// Generate years from current year back to 2012 (typical data range)
+const currentYear = new Date().getFullYear();
+const YEARS = [
+  { value: null, label: 'All Years' },
+  ...Array.from({ length: currentYear - 2011 }, (_, i) => ({
+    value: currentYear - i,
+    label: (currentYear - i).toString(),
+  })),
+];
+
 export function MapFilterPanel({
   filters,
   onFiltersChange,
@@ -93,9 +107,11 @@ export function MapFilterPanel({
     filters.hasAccident,
     filters.hourStart !== null,
     filters.dayOfWeek !== null,
+    filters.year !== null,
     filters.speedOnly,
     filters.detectionMethod,
     filters.minSpeedOver !== null,
+    filters.speedTrapsOnly,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -106,9 +122,11 @@ export function MapFilterPanel({
       hourStart: null,
       hourEnd: null,
       dayOfWeek: null,
+      year: null,
       speedOnly: null,
       detectionMethod: null,
       minSpeedOver: null,
+      speedTrapsOnly: null,
     });
   };
 
@@ -258,6 +276,29 @@ export function MapFilterPanel({
                   ))}
                 </select>
               </div>
+
+              {/* Speed Trap Detection */}
+              <div>
+                <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
+                  <Target size={12} />
+                  Speed Trap Detection
+                </label>
+                <button
+                  onClick={() => updateFilter('speedTrapsOnly', filters.speedTrapsOnly === true ? null : true)}
+                  className={cn(
+                    'w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border flex items-center justify-center gap-2',
+                    filters.speedTrapsOnly === true
+                      ? 'bg-red-500/20 border-red-500/50 text-red-400'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                  )}
+                >
+                  <Target size={16} />
+                  {filters.speedTrapsOnly ? 'Showing Speed Traps' : 'Show Likely Speed Traps'}
+                </button>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Locations with stationary radar/laser and high stop frequency
+                </p>
+              </div>
             </>
           )}
 
@@ -305,6 +346,25 @@ export function MapFilterPanel({
               {DAYS.map((day) => (
                 <option key={day.label} value={day.value ?? ''}>
                   {day.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Year Filter */}
+          <div>
+            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
+              <Calendar size={12} />
+              Year
+            </label>
+            <select
+              value={filters.year ?? ''}
+              onChange={(e) => updateFilter('year', e.target.value ? parseInt(e.target.value) : null)}
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              {YEARS.map((year) => (
+                <option key={year.label} value={year.value ?? ''}>
+                  {year.label}
                 </option>
               ))}
             </select>
