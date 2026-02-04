@@ -16,6 +16,9 @@ import prisma from '@/lib/prisma';
  * - hourStart: 0-23
  * - hourEnd: 0-23
  * - dayOfWeek: 0-6
+ * - speedOnly: "true" to filter only speed violations
+ * - detectionMethod: "radar" | "laser" | "vascar" | "patrol"
+ * - minSpeedOver: minimum speed over limit (e.g., 10, 15, 20)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -31,6 +34,10 @@ export async function GET(request: NextRequest) {
     const hourStart = searchParams.get('hourStart') ? parseInt(searchParams.get('hourStart')!) : null;
     const hourEnd = searchParams.get('hourEnd') ? parseInt(searchParams.get('hourEnd')!) : null;
     const dayOfWeek = searchParams.get('dayOfWeek') ? parseInt(searchParams.get('dayOfWeek')!) : null;
+    // Speed-related filters
+    const speedOnly = searchParams.get('speedOnly') === 'true';
+    const detectionMethod = searchParams.get('detectionMethod');
+    const minSpeedOver = searchParams.get('minSpeedOver') ? parseInt(searchParams.get('minSpeedOver')!) : null;
 
     // Build WHERE conditions
     const conditions: string[] = [];
@@ -84,6 +91,23 @@ export async function GET(request: NextRequest) {
       params.push(dayOfWeek);
     }
 
+    // Speed-only filter (filters by is_speed_related column)
+    if (speedOnly) {
+      conditions.push(`is_speed_related = true`);
+    }
+
+    // Detection method filter
+    if (detectionMethod) {
+      conditions.push(`detection_method = $${paramIndex++}`);
+      params.push(detectionMethod);
+    }
+
+    // Minimum speed over limit filter
+    if (minSpeedOver !== null) {
+      conditions.push(`speed_over >= $${paramIndex++}`);
+      params.push(minSpeedOver);
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Determine sampling rate based on zoom level
@@ -132,7 +156,13 @@ export async function GET(request: NextRequest) {
         accident,
         vehicle_make,
         vehicle_model,
-        vehicle_year
+        vehicle_year,
+        is_speed_related,
+        recorded_speed,
+        posted_limit,
+        speed_over,
+        detection_method,
+        arrest_type
       FROM traffic_violations
       ${whereClause}
       ${samplingClause ? (whereClause ? samplingClause : 'WHERE ' + samplingClause.substring(4)) : ''}
@@ -154,6 +184,12 @@ export async function GET(request: NextRequest) {
       vehicle_make: string | null;
       vehicle_model: string | null;
       vehicle_year: number | null;
+      is_speed_related: boolean;
+      recorded_speed: number | null;
+      posted_limit: number | null;
+      speed_over: number | null;
+      detection_method: string | null;
+      arrest_type: string | null;
     }>>(query, ...params);
 
     // Format as GeoJSON for Mapbox
@@ -175,6 +211,13 @@ export async function GET(request: NextRequest) {
         vehicle: r.vehicle_make 
           ? `${r.vehicle_year || ''} ${r.vehicle_make} ${r.vehicle_model || ''}`.trim()
           : null,
+        // Speed-related properties
+        isSpeedRelated: r.is_speed_related,
+        recordedSpeed: r.recorded_speed,
+        postedLimit: r.posted_limit,
+        speedOver: r.speed_over,
+        detectionMethod: r.detection_method,
+        arrestType: r.arrest_type,
       },
     }));
 

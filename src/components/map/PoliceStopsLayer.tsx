@@ -15,6 +15,10 @@ interface PoliceStopsLayerProps {
     hourStart?: number | null;
     hourEnd?: number | null;
     dayOfWeek?: number | null;
+    // Speed-related filters
+    speedOnly?: boolean | null;
+    detectionMethod?: string | null;
+    minSpeedOver?: number | null;
   };
   onStopClick?: (properties: Record<string, unknown>) => void;
 }
@@ -76,6 +80,16 @@ export function PoliceStopsLayer({
       }
       if (filters.hourEnd !== null && filters.hourEnd !== undefined) {
         params.set('hourEnd', filters.hourEnd.toString());
+      }
+      // Speed-related filters
+      if (filters.speedOnly) {
+        params.set('speedOnly', 'true');
+      }
+      if (filters.detectionMethod) {
+        params.set('detectionMethod', filters.detectionMethod);
+      }
+      if (filters.minSpeedOver !== null && filters.minSpeedOver !== undefined) {
+        params.set('minSpeedOver', filters.minSpeedOver.toString());
       }
       if (filters.dayOfWeek !== null && filters.dayOfWeek !== undefined) {
         params.set('dayOfWeek', filters.dayOfWeek.toString());

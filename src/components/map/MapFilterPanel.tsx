@@ -11,6 +11,9 @@ import {
   Car,
   Clock,
   Calendar,
+  Gauge,
+  Zap,
+  Radio,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +24,10 @@ export interface MapFilters {
   hourStart: number | null;
   hourEnd: number | null;
   dayOfWeek: number | null;
+  // Speed-related filters
+  speedOnly: boolean | null;
+  detectionMethod: string | null; // radar, laser, vascar, patrol
+  minSpeedOver: number | null;
 }
 
 interface MapFilterPanelProps {
@@ -56,6 +63,23 @@ const TIME_RANGES = [
   { value: [19, 23], label: 'Night (7pm-12am)' },
 ];
 
+const DETECTION_METHODS = [
+  { value: null, label: 'All Methods' },
+  { value: 'radar', label: '📡 Radar' },
+  { value: 'laser', label: '⚡ Laser' },
+  { value: 'vascar', label: '⏱️ VASCAR' },
+  { value: 'patrol', label: '🚔 Patrol' },
+];
+
+const SPEED_OVER_OPTIONS = [
+  { value: null, label: 'Any Speed' },
+  { value: 10, label: '10+ mph over' },
+  { value: 15, label: '15+ mph over' },
+  { value: 20, label: '20+ mph over' },
+  { value: 25, label: '25+ mph over' },
+  { value: 30, label: '30+ mph over' },
+];
+
 export function MapFilterPanel({
   filters,
   onFiltersChange,
@@ -69,6 +93,9 @@ export function MapFilterPanel({
     filters.hasAccident,
     filters.hourStart !== null,
     filters.dayOfWeek !== null,
+    filters.speedOnly,
+    filters.detectionMethod,
+    filters.minSpeedOver !== null,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -79,6 +106,9 @@ export function MapFilterPanel({
       hourStart: null,
       hourEnd: null,
       dayOfWeek: null,
+      speedOnly: null,
+      detectionMethod: null,
+      minSpeedOver: null,
     });
   };
 
@@ -168,6 +198,69 @@ export function MapFilterPanel({
             </div>
           </div>
 
+          {/* Speed Filter Toggle */}
+          <div>
+            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
+              <Gauge size={12} />
+              Speed Violations
+            </label>
+            <button
+              onClick={() => updateFilter('speedOnly', filters.speedOnly === true ? null : true)}
+              className={cn(
+                'w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border flex items-center justify-center gap-2',
+                filters.speedOnly === true
+                  ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+              )}
+            >
+              <Gauge size={16} />
+              {filters.speedOnly ? 'Showing Speed Only' : 'Show Speed Violations Only'}
+            </button>
+          </div>
+
+          {/* Speed-specific filters (only shown when speedOnly is enabled) */}
+          {filters.speedOnly && (
+            <>
+              {/* Detection Method */}
+              <div>
+                <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
+                  <Radio size={12} />
+                  Detection Method
+                </label>
+                <select
+                  value={filters.detectionMethod || ''}
+                  onChange={(e) => updateFilter('detectionMethod', e.target.value || null)}
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {DETECTION_METHODS.map((method) => (
+                    <option key={method.label} value={method.value || ''}>
+                      {method.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Minimum Speed Over */}
+              <div>
+                <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
+                  <Zap size={12} />
+                  Minimum Speed Over Limit
+                </label>
+                <select
+                  value={filters.minSpeedOver ?? ''}
+                  onChange={(e) => updateFilter('minSpeedOver', e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {SPEED_OVER_OPTIONS.map((opt) => (
+                    <option key={opt.label} value={opt.value ?? ''}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
           {/* Time Range */}
           <div>
             <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
@@ -250,6 +343,18 @@ export function MapFilterPanel({
                 <span className="w-3 h-3 rounded-full bg-green-500" />
                 <span className="text-zinc-400">Warning</span>
               </div>
+              {filters.speedOnly && (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-cyan-500" />
+                    <span className="text-zinc-400">Speed (low)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <span className="text-zinc-400">Speed (high)</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
