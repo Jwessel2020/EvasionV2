@@ -60,9 +60,18 @@ export function SpeedTrapLayer({
   const [imageLoaded, setImageLoaded] = useState(false);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const onTrapClickRef = useRef(onTrapClick);
+  
+  // Keep the callback ref up to date without triggering re-renders
+  useEffect(() => {
+    onTrapClickRef.current = onTrapClick;
+  }, [onTrapClick]);
 
   // Fetch speed trap data
   const fetchData = useCallback(async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:fetchData',message:'fetchData called',data:{hasMap:!!map},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     if (!map) return;
 
     // Cancel previous request
@@ -82,6 +91,10 @@ export function SpeedTrapLayer({
         params.set('year', year.toString());
       }
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:fetchData',message:'API request bounds',data:{bounds:params.get('bounds'),minStops,year},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+
       const res = await fetch(`/api/analytics/speed-traps?${params}`, {
         signal: abortControllerRef.current.signal,
       });
@@ -89,6 +102,9 @@ export function SpeedTrapLayer({
       if (!res.ok) return;
       
       const json = await res.json();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:fetchData',message:'API response',data:{success:json.success,featureCount:json.data?.features?.length,meta:json.meta},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       if (json.success) {
         const source = map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
         if (source) {
@@ -103,6 +119,9 @@ export function SpeedTrapLayer({
 
   // Load custom marker image
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:imageEffect',message:'Image load effect',data:{hasMap:!!map,isLoaded,imageLoaded},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     if (!map || !isLoaded) return;
 
     // Check if image already exists
@@ -113,12 +132,18 @@ export function SpeedTrapLayer({
 
     const img = new Image();
     img.onload = () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:img.onload',message:'Image loaded successfully',data:{width:img.width,height:img.height},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       if (!map.hasImage(MARKER_IMAGE_ID)) {
         map.addImage(MARKER_IMAGE_ID, img, { sdf: false });
       }
       setImageLoaded(true);
     };
-    img.onerror = () => {
+    img.onerror = (err) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:img.onerror',message:'Image load FAILED',data:{error:String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       console.warn('Failed to load speed trap marker image, using fallback');
       setImageLoaded(true); // Continue with fallback
     };
@@ -127,11 +152,17 @@ export function SpeedTrapLayer({
 
   // Initialize layers
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:initLayersEffect',message:'Init layers effect triggered',data:{hasMap:!!map,isLoaded,imageLoaded},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     if (!map || !isLoaded || !imageLoaded) return;
     
     mapRef.current = map;
     
     const initializeLayers = () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:initializeLayers',message:'initializeLayers called',data:{hasCustomImage:map.hasImage(MARKER_IMAGE_ID)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       try {
         // Add source
         if (!map.getSource(SOURCE_ID)) {
@@ -153,8 +184,8 @@ export function SpeedTrapLayer({
                 'interpolate',
                 ['linear'],
                 ['zoom'],
-                8, 20,
-                12, 28,
+                8, 10,
+                12, 14,
                 16, 36,
               ],
               'circle-opacity': 0.15,
@@ -181,8 +212,8 @@ export function SpeedTrapLayer({
                   'interpolate',
                   ['linear'],
                   ['zoom'],
-                  8, 0.6,
-                  12, 0.9,
+                  8, 0.3,
+                  12, 0.45,
                   16, 1.2,
                 ],
                 'icon-allow-overlap': true,
@@ -225,10 +256,16 @@ export function SpeedTrapLayer({
           }
         } else {
           // Fallback to circle markers if image failed
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:initializeLayers',message:'Using fallback - no custom image',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
           addFallbackCircleLayer();
           return;
         }
 
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:initializeLayers',message:'Layers added successfully with custom image',data:{hasLayer:map.getLayer(LAYER_ID)!==undefined},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         setLayersAdded(true);
       } catch (error) {
         console.warn('Error adding speed trap layers, trying fallback:', error);
@@ -258,8 +295,8 @@ export function SpeedTrapLayer({
                 'interpolate',
                 ['linear'],
                 ['get', 'stopCount'],
-                5, 22,
-                20, 28,
+                5, 11,
+                20, 14,
                 50, 34,
                 100, 42,
               ],
@@ -280,8 +317,8 @@ export function SpeedTrapLayer({
                 'interpolate',
                 ['linear'],
                 ['get', 'stopCount'],
-                5, 14,
-                20, 18,
+                5, 7,
+                20, 9,
                 50, 22,
                 100, 28,
               ],
@@ -304,10 +341,10 @@ export function SpeedTrapLayer({
                 'interpolate',
                 ['linear'],
                 ['get', 'stopCount'],
-                5, 6,
-                20, 8,
-                50, 10,
-                100, 12,
+                5, 1.5,
+                20, 2,
+                50, 5,
+                100, 6,
               ],
               'circle-opacity': 1,
             },
@@ -326,10 +363,10 @@ export function SpeedTrapLayer({
                 'interpolate',
                 ['linear'],
                 ['get', 'stopCount'],
-                5, 3,
-                20, 4,
-                50, 5,
-                100, 6,
+                5, 0.75,
+                20, 1,
+                50, 2.5,
+                100, 3,
               ],
               'circle-opacity': 1,
             },
@@ -371,14 +408,14 @@ export function SpeedTrapLayer({
       }
     };
 
-    // Click handler
+    // Click handler - uses ref to avoid triggering re-init when callback changes
     const handleClick = (e: mapboxgl.MapLayerMouseEvent) => {
       try {
         const features = map.queryRenderedFeatures(e.point, { layers: [LAYER_ID] });
         if (!features.length) return;
         
         const properties = features[0].properties;
-        if (onTrapClick && properties) {
+        if (onTrapClickRef.current && properties) {
           // Parse any stringified arrays
           const parsed = { ...properties };
           if (typeof parsed.activeHours === 'string') {
@@ -388,7 +425,7 @@ export function SpeedTrapLayer({
               // Keep as string
             }
           }
-          onTrapClick(parsed);
+          onTrapClickRef.current(parsed);
         }
       } catch {
         // Ignore errors
@@ -403,12 +440,11 @@ export function SpeedTrapLayer({
       map.getCanvas().style.cursor = '';
     };
 
-    // Initialize
-    if (map.isStyleLoaded()) {
-      initializeLayers();
-    } else {
-      map.once('style.load', initializeLayers);
-    }
+    // Initialize - isLoaded from context already confirms map is ready
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SpeedTrapLayer.tsx:initCheck',message:'Calling initializeLayers directly',data:{isLoaded},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D',runId:'post-fix'})}).catch(()=>{});
+    // #endregion
+    initializeLayers();
 
     // Add event listeners
     const setupEvents = () => {
@@ -444,7 +480,7 @@ export function SpeedTrapLayer({
       }
       setLayersAdded(false);
     };
-  }, [map, isLoaded, imageLoaded, onTrapClick]);
+  }, [map, isLoaded, imageLoaded]);
 
   // Fetch data on mount and when map moves
   useEffect(() => {
