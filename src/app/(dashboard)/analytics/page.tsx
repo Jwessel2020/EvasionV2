@@ -93,6 +93,7 @@ export default function AnalyticsPage() {
     speedTrapsOnly: null,
     vehicleMake: null,
     dayOfWeek: null,
+    searchConducted: null,
   });
   
   // Helper to safely fetch JSON
@@ -194,6 +195,7 @@ export default function AnalyticsPage() {
     if (mapFilters.hasAccident !== null) params.set('hasAccident', mapFilters.hasAccident.toString());
     if (mapFilters.minSpeedOver !== null) params.set('minSpeedOver', mapFilters.minSpeedOver.toString());
     if (mapFilters.vehicleMake) params.set('vehicleMake', mapFilters.vehicleMake);
+    if (mapFilters.searchConducted) params.set('searchConducted', 'true');
 
     fetch(`/api/analytics/area-drilldown?${params}`, { signal: controller.signal })
       .then(res => res.json())
@@ -436,6 +438,7 @@ export default function AnalyticsPage() {
             filters={mapFilters}
             onFiltersChange={setMapFilters}
             className="absolute top-4 left-4 w-64"
+            vehicleMakes={stats?.vehicleMakes || []}
           />
           
           {/* Selected Stop Details */}

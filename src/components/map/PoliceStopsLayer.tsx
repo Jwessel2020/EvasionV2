@@ -107,6 +107,9 @@ export function PoliceStopsLayer({
       if (filters.dayOfWeek !== null && filters.dayOfWeek !== undefined) {
         params.set('dayOfWeek', filters.dayOfWeek.toString());
       }
+      if (filters.searchConducted) {
+        params.set('searchConducted', 'true');
+      }
 
       const res = await fetch(`/api/analytics/points?${params}`, {
         signal: abortControllerRef.current.signal,

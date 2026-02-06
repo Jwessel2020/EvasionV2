@@ -22,6 +22,7 @@ import prisma from '@/lib/prisma';
  * - detectionMethod: "radar" | "laser" | "vascar" | "patrol"
  * - minSpeedOver: minimum speed over limit (e.g., 10, 15, 20)
  * - speedTrapsOnly: "true" to show only likely speed trap locations
+ * - searchConducted: "true" to filter for stops where a search was conducted
  */
 export async function GET(request: NextRequest) {
   try {
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
     const minSpeedOver = searchParams.get('minSpeedOver') ? parseInt(searchParams.get('minSpeedOver')!) : null;
     const speedTrapsOnly = searchParams.get('speedTrapsOnly') === 'true';
     const vehicleMake = searchParams.get('vehicleMake');
+    const searchConducted = searchParams.get('searchConducted') === 'true';
 
     // Build WHERE conditions
     const conditions: string[] = [];
@@ -126,6 +128,11 @@ export async function GET(request: NextRequest) {
     if (vehicleMake && vehicleMake !== 'all') {
       conditions.push(`vehicle_make = $${paramIndex++}`);
       params.push(vehicleMake);
+    }
+
+    // Search conducted filter
+    if (searchConducted) {
+      conditions.push(`search_conducted = true`);
     }
 
     // Speed trap detection - stationary detection methods only

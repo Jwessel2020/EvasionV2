@@ -33,12 +33,14 @@ export interface MapFilters {
   minSpeedOver: number | null;
   speedTrapsOnly: boolean | null; // Show only likely speed trap locations
   vehicleMake: string | null;
+  searchConducted: boolean | null;
 }
 
 interface MapFilterPanelProps {
   filters: MapFilters;
   onFiltersChange: (filters: MapFilters) => void;
   className?: string;
+  vehicleMakes?: Array<{ make: string; count: number }>;
 }
 
 const VIOLATION_TYPES = [
@@ -85,19 +87,7 @@ const SPEED_OVER_OPTIONS = [
   { value: 30, label: '30+ mph over' },
 ];
 
-const VEHICLE_MAKES = [
-  { value: null, label: 'All Makes' },
-  { value: 'TOYOTA', label: 'Toyota' },
-  { value: 'HONDA', label: 'Honda' },
-  { value: 'FORD', label: 'Ford' },
-  { value: 'CHEVROLET', label: 'Chevrolet' },
-  { value: 'BMW', label: 'BMW' },
-  { value: 'MERCEDES-BENZ', label: 'Mercedes-Benz' },
-  { value: 'NISSAN', label: 'Nissan' },
-  { value: 'VOLKSWAGEN', label: 'Volkswagen' },
-  { value: 'HYUNDAI', label: 'Hyundai' },
-  { value: 'SUBARU', label: 'Subaru' },
-];
+// Removed hardcoded VEHICLE_MAKES - now passed as prop from parent
 
 // Generate years from current year back to 2012 (typical data range)
 const currentYear = new Date().getFullYear();
@@ -113,8 +103,18 @@ export function MapFilterPanel({
   filters,
   onFiltersChange,
   className,
+  vehicleMakes = [],
 }: MapFilterPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Build vehicle makes options from prop
+  const vehicleMakeOptions = [
+    { value: null, label: 'All Makes' },
+    ...vehicleMakes.map(vm => ({
+      value: vm.make,
+      label: vm.make.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' '), // Proper case
+    })),
+  ];
 
   const activeFilterCount = [
     filters.violationType,
@@ -128,6 +128,7 @@ export function MapFilterPanel({
     filters.minSpeedOver !== null,
     filters.speedTrapsOnly,
     filters.vehicleMake,
+    filters.searchConducted,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -144,6 +145,7 @@ export function MapFilterPanel({
       minSpeedOver: null,
       speedTrapsOnly: null,
       vehicleMake: null,
+      searchConducted: null,
     });
   };
 
@@ -207,11 +209,11 @@ export function MapFilterPanel({
               <AlertTriangle size={12} />
               Incident Type
             </label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => updateFilter('hasAlcohol', filters.hasAlcohol === true ? null : true)}
                 className={cn(
-                  'flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
+                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
                   filters.hasAlcohol === true
                     ? 'bg-red-500/20 border-red-500/50 text-red-400'
                     : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
@@ -222,13 +224,24 @@ export function MapFilterPanel({
               <button
                 onClick={() => updateFilter('hasAccident', filters.hasAccident === true ? null : true)}
                 className={cn(
-                  'flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
+                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
                   filters.hasAccident === true
                     ? 'bg-orange-500/20 border-orange-500/50 text-orange-400'
                     : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
                 )}
               >
                 💥 Accident
+              </button>
+              <button
+                onClick={() => updateFilter('searchConducted', filters.searchConducted === true ? null : true)}
+                className={cn(
+                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
+                  filters.searchConducted === true
+                    ? 'bg-purple-500/20 border-purple-500/50 text-purple-400'
+                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                )}
+              >
+                🔍 Search
               </button>
             </div>
           </div>
@@ -398,7 +411,7 @@ export function MapFilterPanel({
               onChange={(e) => updateFilter('vehicleMake', e.target.value || null)}
               className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
-              {VEHICLE_MAKES.map((make) => (
+              {vehicleMakeOptions.map((make) => (
                 <option key={make.label} value={make.value ?? ''}>
                   {make.label}
                 </option>

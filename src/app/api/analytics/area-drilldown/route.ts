@@ -15,6 +15,7 @@ import { logger } from '@/lib/logger';
  * - vehicleMake: Filter by vehicle make (optional)
  * - hasAlcohol: Filter for alcohol-related (optional)
  * - hasAccident: Filter for accidents (optional)
+ * - searchConducted: Filter for stops where a search was conducted (optional)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
     const vehicleMake = searchParams.get('vehicleMake');
     const hasAlcohol = searchParams.get('hasAlcohol');
     const hasAccident = searchParams.get('hasAccident');
+    const searchConducted = searchParams.get('searchConducted') === 'true';
 
     // Build WHERE conditions
     const conditions: string[] = [];
@@ -101,6 +103,11 @@ export async function GET(request: NextRequest) {
     if (hasAccident !== null && hasAccident !== undefined && hasAccident !== '') {
       const accidentValue = hasAccident === 'true' ? 'true' : 'false';
       conditions.push(`accident = ${accidentValue}`);
+    }
+
+    // Search conducted filter
+    if (searchConducted) {
+      conditions.push(`search_conducted = true`);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
