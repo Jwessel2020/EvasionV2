@@ -88,7 +88,7 @@ export default function CreateRoutePage() {
               <RouteLayer 
                 id="new-route" 
                 coordinates={routePoints}
-                color="#f97316"
+                color="#a855f7"
                 width={5}
               />
             )}
@@ -136,7 +136,7 @@ export default function CreateRoutePage() {
           {routePoints.length === 0 && isDrawing && (
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-zinc-900/95 backdrop-blur-sm px-6 py-3 rounded-xl border border-zinc-800 shadow-lg">
               <div className="flex items-center gap-3 text-sm">
-                <Info size={18} className="text-orange-500" />
+                <Info size={18} className="text-violet-500" />
                 <span className="text-zinc-300">Click on the map to add route points</span>
               </div>
             </div>
@@ -146,7 +146,7 @@ export default function CreateRoutePage() {
           {routePoints.length > 0 && (
             <div className="absolute bottom-6 left-6 bg-zinc-900/90 backdrop-blur-sm px-4 py-2 rounded-lg border border-zinc-800">
               <div className="flex items-center gap-2 text-sm text-zinc-300">
-                <RouteIcon size={16} className="text-orange-500" />
+                <RouteIcon size={16} className="text-violet-500" />
                 {routePoints.length} points
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function CreateRoutePage() {
                   placeholder="Describe the route, highlights, things to watch out for..."
                   value={routeDescription}
                   onChange={(e) => setRouteDescription(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 resize-none h-24 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 resize-none h-24 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
               </div>
 
@@ -190,7 +190,7 @@ export default function CreateRoutePage() {
                 <select
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                 >
                   <option value="EASY">Easy - Relaxed driving</option>
                   <option value="MODERATE">Moderate - Some turns</option>

@@ -34,6 +34,8 @@ export interface MapFilters {
   speedTrapsOnly: boolean | null; // Show only likely speed trap locations
   vehicleMake: string | null;
   searchConducted: boolean | null;
+  // ML Prediction overlay
+  showPredictions: boolean | null;
 }
 
 interface MapFilterPanelProps {
@@ -146,6 +148,7 @@ export function MapFilterPanel({
       speedTrapsOnly: null,
       vehicleMake: null,
       searchConducted: null,
+      showPredictions: null,
     });
   };
 
@@ -166,10 +169,10 @@ export function MapFilterPanel({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
-          <Filter size={18} className="text-orange-500" />
+          <Filter size={18} className="text-violet-500" />
           <span className="font-medium text-white">Filters</span>
           {activeFilterCount > 0 && (
-            <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs rounded-full">
+            <span className="px-2 py-0.5 bg-violet-500/20 text-violet-400 text-xs rounded-full">
               {activeFilterCount}
             </span>
           )}
@@ -193,7 +196,7 @@ export function MapFilterPanel({
             <select
               value={filters.violationType || ''}
               onChange={(e) => updateFilter('violationType', e.target.value || null)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               {VIOLATION_TYPES.map((type) => (
                 <option key={type.label} value={type.value || ''}>
@@ -244,6 +247,28 @@ export function MapFilterPanel({
                 🔍 Search
               </button>
             </div>
+          </div>
+
+          {/* ML Risk Prediction Toggle */}
+          <div>
+            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
+              <MapPin size={12} />
+              AI Risk Prediction
+            </label>
+            <button
+              onClick={() => updateFilter('showPredictions', filters.showPredictions === true ? null : true)}
+              className={cn(
+                'w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border flex items-center justify-center gap-2',
+                filters.showPredictions === true
+                  ? 'bg-purple-500/20 border-purple-500/50 text-purple-400'
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+              )}
+            >
+              🔮 {filters.showPredictions ? 'Prediction Heatmap ON' : 'Show Risk Prediction'}
+            </button>
+            <p className="text-xs text-zinc-500 mt-1">
+              ML-based enforcement probability by location and time
+            </p>
           </div>
 
           {/* Speed Filter Toggle */}
@@ -349,7 +374,7 @@ export function MapFilterPanel({
                   onFiltersChange({ ...filters, hourStart: start, hourEnd: end });
                 }
               }}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               {TIME_RANGES.map((range) => (
                 <option 
@@ -371,7 +396,7 @@ export function MapFilterPanel({
             <select
               value={filters.dayOfWeek ?? ''}
               onChange={(e) => updateFilter('dayOfWeek', e.target.value ? parseInt(e.target.value) : null)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               {DAYS.map((day) => (
                 <option key={day.label} value={day.value ?? ''}>
@@ -390,7 +415,7 @@ export function MapFilterPanel({
             <select
               value={filters.year ?? ''}
               onChange={(e) => updateFilter('year', e.target.value ? parseInt(e.target.value) : null)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               {YEARS.map((year) => (
                 <option key={year.label} value={year.value ?? ''}>
@@ -409,7 +434,7 @@ export function MapFilterPanel({
             <select
               value={filters.vehicleMake ?? ''}
               onChange={(e) => updateFilter('vehicleMake', e.target.value || null)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               {vehicleMakeOptions.map((make) => (
                 <option key={make.label} value={make.value ?? ''}>

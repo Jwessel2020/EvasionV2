@@ -15,7 +15,7 @@ interface RouteLayerProps {
 export function RouteLayer({
   id,
   coordinates,
-  color = '#f97316', // Orange
+  color = '#a855f7', // Violet
   width = 4,
   opacity = 0.8,
   dashed = false,

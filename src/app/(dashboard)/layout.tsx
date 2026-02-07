@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks';
 import { Button } from '@/components/ui';
 import {
-  Car,
   Map,
   Route,
   Calendar,
@@ -20,12 +19,16 @@ import {
   X,
   Bell,
   BarChart3,
+  Zap,
+  Camera,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Map', href: '/map', icon: Map },
+  { name: 'Spotting', href: '/spotting', icon: Camera },
   { name: 'Routes', href: '/routes', icon: Route },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Insights', href: '/insights', icon: Zap },
   { name: 'Events', href: '/events', icon: Calendar },
   { name: 'Forums', href: '/forums', icon: MessageSquare },
   { name: 'Garage', href: '/garage', icon: Warehouse },
@@ -62,10 +65,11 @@ export default function DashboardLayout({
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-zinc-800">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
-                <Car className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">Evasion</span>
+              <img
+                src="/images/evasion-logo.png"
+                alt="Evasion"
+                className="h-8 w-auto"
+              />
             </Link>
             <button
               className="lg:hidden text-zinc-400 hover:text-white"
@@ -87,7 +91,7 @@ export default function DashboardLayout({
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-orange-500/10 text-orange-500'
+                      ? 'bg-violet-500/10 text-violet-500'
                       : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                   )}
                 >
@@ -101,8 +105,8 @@ export default function DashboardLayout({
           {/* User section */}
           <div className="p-4 border-t border-zinc-800">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                <span className="text-orange-500 font-medium">
+              <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center">
+                <span className="text-violet-500 font-medium">
                   {user?.displayName?.charAt(0) || 'U'}
                 </span>
               </div>
@@ -153,7 +157,7 @@ export default function DashboardLayout({
             <div className="flex items-center gap-3">
               <button className="relative p-2 text-zinc-400 hover:text-white transition-colors">
                 <Bell size={20} />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-violet-500 rounded-full" />
               </button>
             </div>
           </div>

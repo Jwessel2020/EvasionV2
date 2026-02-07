@@ -45,7 +45,7 @@ const createSpeedTrapMarkerSVG = (color: string): string => `
     <circle cx="9" cy="11" r="4" fill="#fff"/>
     <circle cx="9" cy="11" r="2.5" fill="#1f2937"/>
     <!-- Flash -->
-    <path d="M3 3 L6 6 M15 3 L12 6" stroke="#f97316" stroke-width="2" stroke-linecap="round"/>
+    <path d="M3 3 L6 6 M15 3 L12 6" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/>
     <circle cx="3" cy="2" r="1.5" fill="#fbbf24"/>
     <circle cx="15" cy="2" r="1.5" fill="#fbbf24"/>
   </g>

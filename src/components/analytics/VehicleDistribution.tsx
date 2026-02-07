@@ -21,7 +21,7 @@ interface VehicleDistributionProps {
 
 const COLORS = [
   '#3b82f6', // blue
-  '#f97316', // orange
+  '#a855f7', // violet
   '#8b5cf6', // purple
   '#22c55e', // green
   '#ef4444', // red

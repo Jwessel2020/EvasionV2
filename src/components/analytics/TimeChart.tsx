@@ -60,7 +60,7 @@ export function TimeChart({ data, title, showBreakdown = false }: TimeChartProps
             <Bar
               dataKey="count"
               name="Total Stops"
-              fill="#f97316"
+              fill="#a855f7"
               radius={[4, 4, 0, 0]}
             />
             {showBreakdown && (

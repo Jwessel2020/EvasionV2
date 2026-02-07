@@ -23,7 +23,7 @@ export default function HomePage() {
         {/* Navigation */}
         <nav className="relative z-10 flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-violet-500 flex items-center justify-center">
               <Car className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold text-white">Evasion</span>
@@ -44,7 +44,7 @@ export default function HomePage() {
           <div className="max-w-3xl">
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
               Drive Together.
-              <span className="text-orange-500"> Explore More.</span>
+              <span className="text-violet-500"> Explore More.</span>
             </h1>
             <p className="text-xl text-zinc-400 mb-8 max-w-2xl">
               The social navigation network for automotive enthusiasts. 
@@ -89,9 +89,9 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-orange-500/50 transition-colors">
-              <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-4">
-                <MapPin className="w-6 h-6 text-orange-500" />
+            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-violet-500/50 transition-colors">
+              <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4">
+                <MapPin className="w-6 h-6 text-violet-500" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Live Location</h3>
               <p className="text-zinc-400">
@@ -100,9 +100,9 @@ export default function HomePage() {
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-orange-500/50 transition-colors">
-              <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-4">
-                <Route className="w-6 h-6 text-orange-500" />
+            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-violet-500/50 transition-colors">
+              <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4">
+                <Route className="w-6 h-6 text-violet-500" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Route Discovery</h3>
               <p className="text-zinc-400">
@@ -111,9 +111,9 @@ export default function HomePage() {
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-orange-500/50 transition-colors">
-              <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-orange-500" />
+            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-violet-500/50 transition-colors">
+              <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4">
+                <Users className="w-6 h-6 text-violet-500" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Community Events</h3>
               <p className="text-zinc-400">
@@ -122,9 +122,9 @@ export default function HomePage() {
             </div>
 
             {/* Feature 4 */}
-            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-orange-500/50 transition-colors">
-              <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-4">
-                <Shield className="w-6 h-6 text-orange-500" />
+            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-violet-500/50 transition-colors">
+              <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4">
+                <Shield className="w-6 h-6 text-violet-500" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Road Alerts</h3>
               <p className="text-zinc-400">
@@ -133,9 +133,9 @@ export default function HomePage() {
             </div>
 
             {/* Feature 5 */}
-            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-orange-500/50 transition-colors">
-              <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-4">
-                <Car className="w-6 h-6 text-orange-500" />
+            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-violet-500/50 transition-colors">
+              <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4">
+                <Car className="w-6 h-6 text-violet-500" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Your Garage</h3>
               <p className="text-zinc-400">
@@ -144,9 +144,9 @@ export default function HomePage() {
             </div>
 
             {/* Feature 6 */}
-            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-orange-500/50 transition-colors">
-              <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-4">
-                <Zap className="w-6 h-6 text-orange-500" />
+            <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-violet-500/50 transition-colors">
+              <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4">
+                <Zap className="w-6 h-6 text-violet-500" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Car Spotting</h3>
               <p className="text-zinc-400">
@@ -158,19 +158,19 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-6 bg-gradient-to-br from-orange-600 to-orange-700">
+      <section className="py-24 px-6 bg-gradient-to-br from-violet-600 to-violet-700">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold text-white mb-4">
             Ready to Hit the Road?
           </h2>
-          <p className="text-orange-100 mb-8 text-lg">
+          <p className="text-violet-100 mb-8 text-lg">
             Join thousands of car enthusiasts already using Evasion. 
             Must be 16 or older to create an account.
           </p>
           <Link href="/signup">
             <Button 
               size="lg" 
-              className="bg-white text-orange-600 hover:bg-zinc-100"
+              className="bg-white text-violet-600 hover:bg-zinc-100"
             >
               Create Your Account
             </Button>
@@ -183,7 +183,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-violet-500 flex items-center justify-center">
                 <Car className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold text-white">Evasion</span>

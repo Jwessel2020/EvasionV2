@@ -125,14 +125,14 @@ function LoginForm() {
                   name="rememberMe"
                   checked={formData.rememberMe}
                   onChange={handleChange}
-                  className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-orange-500 focus:ring-orange-500"
+                  className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-violet-500 focus:ring-violet-500"
                 />
                 <span className="text-sm text-zinc-400">Remember me</span>
               </label>
               
               <Link 
                 href="/forgot-password" 
-                className="text-sm text-orange-500 hover:text-orange-400 transition-colors"
+                className="text-sm text-violet-500 hover:text-violet-400 transition-colors"
               >
                 Forgot password?
               </Link>
@@ -154,7 +154,7 @@ function LoginForm() {
         Don&apos;t have an account?{' '}
         <Link 
           href="/signup" 
-          className="text-orange-500 hover:text-orange-400 font-medium transition-colors"
+          className="text-violet-500 hover:text-violet-400 font-medium transition-colors"
         >
           Create one
         </Link>
@@ -167,7 +167,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full" />
       </div>
     }>
       <LoginForm />

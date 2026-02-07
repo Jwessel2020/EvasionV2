@@ -119,9 +119,9 @@ export default function SignupPage() {
       </div>
 
       {/* Age Warning */}
-      <div className="flex items-start gap-3 p-4 rounded-lg bg-orange-500/10 border border-orange-500/20 mb-6">
-        <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-orange-200">
+      <div className="flex items-start gap-3 p-4 rounded-lg bg-violet-500/10 border border-violet-500/20 mb-6">
+        <AlertTriangle className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-violet-200">
           You must be <strong>16 years or older</strong> to create an Evasion account. 
           By signing up, you confirm you meet this age requirement.
         </p>
@@ -216,15 +216,15 @@ export default function SignupPage() {
                 name="agreeToTerms"
                 checked={formData.agreeToTerms}
                 onChange={handleChange}
-                className="w-4 h-4 mt-1 rounded border-zinc-600 bg-zinc-800 text-orange-500 focus:ring-orange-500"
+                className="w-4 h-4 mt-1 rounded border-zinc-600 bg-zinc-800 text-violet-500 focus:ring-violet-500"
               />
               <span className="text-sm text-zinc-400">
                 I agree to the{' '}
-                <Link href="/terms" className="text-orange-500 hover:text-orange-400">
+                <Link href="/terms" className="text-violet-500 hover:text-violet-400">
                   Terms of Service
                 </Link>{' '}
                 and{' '}
-                <Link href="/privacy" className="text-orange-500 hover:text-orange-400">
+                <Link href="/privacy" className="text-violet-500 hover:text-violet-400">
                   Privacy Policy
                 </Link>
               </span>
@@ -249,7 +249,7 @@ export default function SignupPage() {
         Already have an account?{' '}
         <Link 
           href="/login" 
-          className="text-orange-500 hover:text-orange-400 font-medium transition-colors"
+          className="text-violet-500 hover:text-violet-400 font-medium transition-colors"
         >
           Sign in
         </Link>

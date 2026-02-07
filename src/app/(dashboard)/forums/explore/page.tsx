@@ -206,7 +206,7 @@ export default function ExplorePage() {
                       'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold',
                       index === 0 ? 'bg-yellow-500/20 text-yellow-400' :
                       index === 1 ? 'bg-zinc-400/20 text-zinc-300' :
-                      index === 2 ? 'bg-orange-500/20 text-orange-400' :
+                      index === 2 ? 'bg-amber-600/20 text-amber-500' :
                       'bg-zinc-800 text-zinc-500'
                     )}>
                       {index + 1}
@@ -321,7 +321,7 @@ export default function ExplorePage() {
                       'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold',
                       index === 0 ? 'bg-yellow-500/20 text-yellow-400' :
                       index === 1 ? 'bg-zinc-400/20 text-zinc-300' :
-                      index === 2 ? 'bg-orange-500/20 text-orange-400' :
+                      index === 2 ? 'bg-amber-600/20 text-amber-500' :
                       'bg-zinc-800 text-zinc-500'
                     )}>
                       {index + 1}

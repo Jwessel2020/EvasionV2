@@ -4,12 +4,13 @@
 :root {
   --background: #09090b;
   --foreground: #fafafa;
-  --primary: #f97316;
-  --primary-hover: #ea580c;
+  --primary: #a855f7;
+  --primary-hover: #9333ea;
   --card: #18181b;
   --card-border: #27272a;
   --muted: #71717a;
   --accent: #3f3f46;
+  --accent-cyan: #22d3ee;
 }
 
 * {
@@ -160,7 +161,7 @@ body {
 
 /* Gradient backgrounds */
 .gradient-primary {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
 }
 
 .gradient-dark {

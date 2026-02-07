@@ -31,7 +31,7 @@ export function TopList({ title, items, maxItems = 5 }: TopListProps) {
             </div>
             <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full transition-all duration-500"
                 style={{ width: `${(item.count / maxCount) * 100}%` }}
               />
             </div>

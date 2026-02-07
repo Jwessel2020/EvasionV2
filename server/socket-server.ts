@@ -46,6 +46,21 @@ interface PoliceAlert {
   expiresAt: number;
 }
 
+interface CarSpotting {
+  id: string;
+  spotterId: string;
+  spotterUsername: string;
+  location: { latitude: number; longitude: number };
+  make: string;
+  model: string;
+  color?: string;
+  year?: number;
+  photos: string[];
+  videoUrl?: string;
+  description?: string;
+  spottedAt: number;
+}
+
 const activeUsers = new Map<string, UserLocation>();
 const policeAlerts = new Map<string, PoliceAlert>();
 const userSockets = new Map<string, string>(); // socketId -> userId
@@ -145,9 +160,34 @@ io.on('connection', (socket) => {
       // Extend expiry on confirmation
       alert.expiresAt = Date.now() + 40 * 60 * 1000;
       policeAlerts.set(alertId, alert);
-      
+
       io.emit('alert:confirmed', alert);
     }
+  });
+
+  // Handle car spotting reports
+  socket.on('car:spotted', (data) => {
+    const spotting: CarSpotting = {
+      id: data.id || `spot-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      spotterId: userId,
+      spotterUsername: username,
+      location: {
+        latitude: data.latitude,
+        longitude: data.longitude,
+      },
+      make: data.make,
+      model: data.model,
+      color: data.color,
+      year: data.year,
+      photos: data.photos || [],
+      videoUrl: data.videoUrl,
+      description: data.description,
+      spottedAt: Date.now(),
+    };
+
+    // Broadcast to all users
+    io.emit('car:spotted', spotting);
+    console.log(`🚗 New car spotting: ${data.make} ${data.model} by ${username}`);
   });
 
   // Handle disconnect

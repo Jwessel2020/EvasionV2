@@ -44,7 +44,7 @@ export default function DashboardPage() {
       description: 'Manage your vehicles',
       href: '/garage',
       icon: Users,
-      color: 'bg-orange-500/20 text-orange-500',
+      color: 'bg-violet-500/20 text-violet-500',
     },
   ];
 
@@ -132,7 +132,7 @@ export default function DashboardPage() {
                 <CardTitle>Popular Routes</CardTitle>
                 <CardDescription>Top routes this week</CardDescription>
               </div>
-              <Link href="/routes" className="text-orange-500 hover:text-orange-400 text-sm flex items-center gap-1">
+              <Link href="/routes" className="text-violet-500 hover:text-violet-400 text-sm flex items-center gap-1">
                 View all <ChevronRight size={16} />
               </Link>
             </div>
@@ -154,7 +154,7 @@ export default function DashboardPage() {
                 <CardTitle>Upcoming Events</CardTitle>
                 <CardDescription>Events in your area</CardDescription>
               </div>
-              <Link href="/events" className="text-orange-500 hover:text-orange-400 text-sm flex items-center gap-1">
+              <Link href="/events" className="text-violet-500 hover:text-violet-400 text-sm flex items-center gap-1">
                 View all <ChevronRight size={16} />
               </Link>
             </div>

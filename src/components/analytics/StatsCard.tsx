@@ -13,13 +13,13 @@ interface StatsCardProps {
     label: string;
     positive?: boolean;
   };
-  color?: 'default' | 'orange' | 'red' | 'green' | 'blue' | 'purple';
+  color?: 'default' | 'violet' | 'red' | 'green' | 'blue' | 'purple';
   className?: string;
 }
 
 const colorStyles = {
   default: 'bg-zinc-900 border-zinc-800',
-  orange: 'bg-orange-500/10 border-orange-500/20',
+  violet: 'bg-violet-500/10 border-violet-500/20',
   red: 'bg-red-500/10 border-red-500/20',
   green: 'bg-green-500/10 border-green-500/20',
   blue: 'bg-blue-500/10 border-blue-500/20',
@@ -28,7 +28,7 @@ const colorStyles = {
 
 const iconColors = {
   default: 'bg-zinc-800 text-zinc-400',
-  orange: 'bg-orange-500/20 text-orange-500',
+  violet: 'bg-violet-500/20 text-violet-500',
   red: 'bg-red-500/20 text-red-500',
   green: 'bg-green-500/20 text-green-500',
   blue: 'bg-blue-500/20 text-blue-500',

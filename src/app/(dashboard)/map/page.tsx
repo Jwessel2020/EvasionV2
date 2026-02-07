@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MapProvider, BaseMap, FriendMarker, PoliceMarker, HeatmapLayer, SpeedTrapLayer } from '@/components/map';
+import { MapProvider, BaseMap, FriendMarker, PoliceMarker, HeatmapLayer, SpeedTrapLayer, PatternMarkersLayer, CarSpottingLayer } from '@/components/map';
 import { Button } from '@/components/ui';
 import { PredictionPanel } from '@/components/analytics';
 import { useGeolocation } from '@/hooks';
@@ -17,7 +17,10 @@ import {
   Locate,
   X,
   Layers,
-  Target
+  Target,
+  BrainCircuit,
+  ChevronDown,
+  Car
 } from 'lucide-react';
 
 // Mock data for demo - replace with real-time data later
@@ -69,10 +72,24 @@ export default function MapPage() {
   const [showAlerts, setShowAlerts] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showSpeedTraps, setShowSpeedTraps] = useState(true); // Show speed traps by default - v6
+  const [showCarSpottings, setShowCarSpottings] = useState(false);
   const [heatmapData, setHeatmapData] = useState<GeoJSON.FeatureCollection | null>(null);
   const [selectedFriend, setSelectedFriend] = useState<LiveUserPin | null>(null);
   const [selectedTrap, setSelectedTrap] = useState<Record<string, unknown> | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
+
+  // ML Pattern state
+  const [showPatterns, setShowPatterns] = useState(false);
+  const [patterns, setPatterns] = useState<Array<{
+    id: string;
+    type: string;
+    name: string;
+    description: string;
+    locationCount: number;
+    style: { icon: string; color: string; borderColor: string };
+  }>>([]);
+  const [selectedPatternId, setSelectedPatternId] = useState<string | null>(null);
+  const [patternDropdownOpen, setPatternDropdownOpen] = useState(false);
   
   // Fetch heatmap data
   useEffect(() => {
@@ -95,6 +112,22 @@ export default function MapPage() {
         });
     }
   }, [showHeatmap, heatmapData]);
+
+  // Fetch ML patterns when enabled
+  useEffect(() => {
+    if (showPatterns && patterns.length === 0) {
+      fetch('/api/insights/ml/patterns?summary=true')
+        .then(res => res.json())
+        .then(json => {
+          if (json.success && json.data?.patterns) {
+            setPatterns(json.data.patterns);
+          }
+        })
+        .catch(err => {
+          console.warn('Failed to load ML patterns:', err.message);
+        });
+    }
+  }, [showPatterns, patterns.length]);
 
   // Initial center on user location if available
   const initialCenter: [number, number] = location 
@@ -168,6 +201,26 @@ export default function MapPage() {
               setSelectedFriend(null); // Close other panels
             }}
           />
+
+          {/* ML Pattern markers */}
+          <PatternMarkersLayer
+            visible={showPatterns}
+            selectedPatternId={selectedPatternId}
+            onPatternLocationClick={(loc, pattern) => {
+              console.log('Pattern location clicked:', loc, pattern);
+              // Could open a detail panel here
+            }}
+          />
+
+          {/* Car spotting markers */}
+          <CarSpottingLayer
+            visible={showCarSpottings}
+            onSpotClick={(spot) => {
+              console.log('Car spotting clicked:', spot);
+              // Could open a detail panel here or navigate to the spotting page
+              window.open(`/spotting?highlight=${spot.id}`, '_blank');
+            }}
+          />
         </BaseMap>
 
         {/* Top controls */}
@@ -236,6 +289,118 @@ export default function MapPage() {
             <Layers size={16} className="mr-1" />
             Heatmap
           </Button>
+          <Button
+            variant={showCarSpottings ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setShowCarSpottings(!showCarSpottings)}
+            className="shadow-lg"
+            title="Show car spottings from the community"
+          >
+            <Car size={16} className="mr-1" />
+            Spottings
+          </Button>
+
+          {/* ML Patterns dropdown */}
+          <div className="relative">
+            <Button
+              variant={showPatterns ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => {
+                if (!showPatterns) {
+                  setShowPatterns(true);
+                  setPatternDropdownOpen(true);
+                } else {
+                  setPatternDropdownOpen(!patternDropdownOpen);
+                }
+              }}
+              className="shadow-lg"
+            >
+              <BrainCircuit size={16} className="mr-1" />
+              ML Patterns
+              <ChevronDown size={14} className={`ml-1 transition-transform ${patternDropdownOpen ? 'rotate-180' : ''}`} />
+            </Button>
+
+            {/* Pattern selector dropdown */}
+            {patternDropdownOpen && showPatterns && (
+              <div className="absolute top-full right-0 mt-2 w-80 bg-zinc-900/95 backdrop-blur-sm rounded-lg border border-zinc-700 shadow-xl z-50 max-h-96 overflow-y-auto">
+                <div className="p-3 border-b border-zinc-700">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-white">Discovered Patterns</span>
+                    <button
+                      onClick={() => {
+                        setShowPatterns(false);
+                        setSelectedPatternId(null);
+                        setPatternDropdownOpen(false);
+                      }}
+                      className="text-xs text-zinc-400 hover:text-white"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Select a pattern to see its locations on the map
+                  </p>
+                </div>
+
+                {patterns.length === 0 ? (
+                  <div className="p-4 text-center text-zinc-400 text-sm">
+                    Loading patterns...
+                  </div>
+                ) : (
+                  <div className="p-2">
+                    {/* Group by pattern type */}
+                    {['time_cluster', 'method_zone', 'day_pattern'].map(type => {
+                      const typePatterns = patterns.filter(p => p.type === type);
+                      if (typePatterns.length === 0) return null;
+
+                      const typeLabels: Record<string, string> = {
+                        'time_cluster': 'Time Clusters',
+                        'method_zone': 'Detection Method Zones',
+                        'day_pattern': 'Day Patterns',
+                      };
+
+                      return (
+                        <div key={type} className="mb-2">
+                          <div className="text-xs text-zinc-500 px-2 py-1 uppercase tracking-wide">
+                            {typeLabels[type] || type}
+                          </div>
+                          {typePatterns.map(pattern => (
+                            <button
+                              key={pattern.id}
+                              onClick={() => {
+                                setSelectedPatternId(selectedPatternId === pattern.id ? null : pattern.id);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                                selectedPatternId === pattern.id
+                                  ? 'bg-zinc-700'
+                                  : 'hover:bg-zinc-800'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: pattern.style.color }}
+                                />
+                                <span className="text-sm text-white flex-1 truncate">
+                                  {pattern.name}
+                                </span>
+                                <span className="text-xs text-zinc-400">
+                                  {pattern.locationCount}
+                                </span>
+                              </div>
+                              <p className="text-xs text-zinc-500 mt-0.5 pl-5 truncate">
+                                {pattern.description}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         
         {/* Prediction panel */}
@@ -273,7 +438,7 @@ export default function MapPage() {
                 <span className="text-zinc-400">Location unavailable</span>
               )}
             </div>
-            <button 
+            <button
               onClick={refreshLocation}
               className="p-1.5 hover:bg-zinc-800 rounded transition-colors"
             >
@@ -282,13 +447,49 @@ export default function MapPage() {
           </div>
         </div>
 
+        {/* Selected pattern info */}
+        {selectedPatternId && showPatterns && (
+          <div className="absolute bottom-20 left-6 bg-zinc-900/95 backdrop-blur-sm rounded-lg p-3 border border-zinc-700 max-w-xs">
+            {(() => {
+              const pattern = patterns.find(p => p.id === selectedPatternId);
+              if (!pattern) return null;
+              return (
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: pattern.style.color }}
+                    />
+                    <span className="text-sm font-medium text-white">{pattern.name}</span>
+                    <button
+                      onClick={() => setSelectedPatternId(null)}
+                      className="ml-auto p-1 hover:bg-zinc-700 rounded"
+                    >
+                      <X size={14} className="text-zinc-400" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-zinc-400 mb-2">{pattern.description}</p>
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-zinc-500">
+                      <span className="text-white font-medium">{pattern.locationCount}</span> locations
+                    </span>
+                    <span className="text-zinc-500">
+                      Type: <span className="text-zinc-300">{pattern.type.replace('_', ' ')}</span>
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
+
         {/* Selected friend panel */}
         {selectedFriend && (
           <div className="absolute top-20 left-4 w-72 bg-zinc-900/95 backdrop-blur-sm rounded-xl border border-zinc-800 p-4 shadow-xl animate-fade-in">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
-                  <span className="text-orange-500 font-bold text-lg">
+                <div className="w-12 h-12 rounded-full bg-violet-500/20 flex items-center justify-center">
+                  <span className="text-violet-500 font-bold text-lg">
                     {selectedFriend.displayName.charAt(0)}
                   </span>
                 </div>
@@ -321,7 +522,7 @@ export default function MapPage() {
               {selectedFriend.vehicleName && (
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Vehicle</span>
-                  <span className="text-orange-400 font-medium">{selectedFriend.vehicleName}</span>
+                  <span className="text-violet-400 font-medium">{selectedFriend.vehicleName}</span>
                 </div>
               )}
             </div>
@@ -375,7 +576,7 @@ export default function MapPage() {
               {selectedTrap.avgSpeedOver && (
                 <div className="bg-zinc-800/50 rounded-lg p-2">
                   <p className="text-zinc-400 text-xs">Avg Speed Over</p>
-                  <p className="text-lg font-semibold text-orange-400">
+                  <p className="text-lg font-semibold text-violet-400">
                     +{Number(selectedTrap.avgSpeedOver)} mph
                   </p>
                 </div>
@@ -454,7 +655,7 @@ function ReportModal({ onClose }: { onClose: () => void }) {
               onClick={() => setReportType(type.id)}
               className={`p-4 rounded-lg border-2 transition-all ${
                 reportType === type.id
-                  ? 'border-orange-500 bg-orange-500/10'
+                  ? 'border-violet-500 bg-violet-500/10'
                   : 'border-zinc-700 hover:border-zinc-600'
               }`}
             >

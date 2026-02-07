@@ -610,20 +610,30 @@ model CarSpotting {
   id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   spotterId   String    @map("spotter_id") @db.Uuid
   vehicleId   String?   @map("vehicle_id") @db.Uuid // If spotted car is registered
-  
+
   latitude    Float
   longitude   Float
-  
+
   // If vehicle not registered, store details
   make        String?   @db.VarChar(50)
   model       String?   @db.VarChar(50)
   color       String?   @db.VarChar(30)
   year        Int?
-  
+
   photos      String[]  @default([])
+  videoUrl    String?   @map("video_url") // Short video URL
   description String?   @db.VarChar(500)
-  
+
+  // Forum integration
+  threadId    String?   @map("thread_id") // Link to MongoDB forum thread
+
+  // Engagement metrics
+  likeCount   Int       @default(0) @map("like_count")
+  viewCount   Int       @default(0) @map("view_count")
+
   spottedAt   DateTime  @default(now()) @map("spotted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   // Relations
   spotter     User      @relation("Spotter", fields: [spotterId], references: [id], onDelete: Cascade)
@@ -632,5 +642,6 @@ model CarSpotting {
   @@index([spotterId])
   @@index([vehicleId])
   @@index([spottedAt])
+  @@index([latitude, longitude])
   @@map("car_spottings")
 }

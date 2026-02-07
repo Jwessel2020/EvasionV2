@@ -209,7 +209,7 @@ export default function UserProfilePage() {
   return (
     <div>
       {/* Banner */}
-      <div className="h-48 bg-gradient-to-br from-red-600/30 to-orange-600/30 relative">
+      <div className="h-48 bg-gradient-to-br from-violet-600/30 to-purple-600/30 relative">
         {user.banner && (
           <img
             src={user.banner}
@@ -230,7 +230,7 @@ export default function UserProfilePage() {
               className="w-32 h-32 rounded-xl border-4 border-zinc-950 object-cover"
             />
           ) : (
-            <div className="w-32 h-32 rounded-xl border-4 border-zinc-950 bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-4xl">
+            <div className="w-32 h-32 rounded-xl border-4 border-zinc-950 bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-white font-bold text-4xl">
               {user.username[0].toUpperCase()}
             </div>
           )}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MapProvider, BaseMap, HeatmapLayer, PoliceStopsLayer, SpeedTrapLayer, MapFilterPanel, type MapFilters } from '@/components/map';
+import { MapProvider, BaseMap, HeatmapLayer, PoliceStopsLayer, SpeedTrapLayer, MapFilterPanel, PatternMarkersLayer, type MapFilters } from '@/components/map';
+import { PredictionLayer } from '@/components/map/PredictionLayer';
 import { AreaSelectionTool } from '@/components/map/AreaSelectionTool';
 import { StatsCard, TimeChart, TopList, SpeedAnalytics, DrillDownPanel } from '@/components/analytics';
 import { Button, Card, CardContent } from '@/components/ui';
@@ -19,6 +20,8 @@ import {
   Target,
   X,
   Focus,
+  BrainCircuit,
+  ChevronDown,
 } from 'lucide-react';
 
 interface StatsData {
@@ -78,6 +81,19 @@ export default function AnalyticsPage() {
   const [drillDownData, setDrillDownData] = useState<any | null>(null);
   const [isLoadingDrillDown, setIsLoadingDrillDown] = useState(false);
   const [drillDownError, setDrillDownError] = useState<string | null>(null);
+
+  // ML Pattern state
+  const [showPatterns, setShowPatterns] = useState(false);
+  const [patterns, setPatterns] = useState<Array<{
+    id: string;
+    type: string;
+    name: string;
+    description: string;
+    locationCount: number;
+    style: { icon: string; color: string; borderColor: string };
+  }>>([]);
+  const [selectedPatternId, setSelectedPatternId] = useState<string | null>(null);
+  const [patternDropdownOpen, setPatternDropdownOpen] = useState(false);
   
   // Map filters for points layer
   const [mapFilters, setMapFilters] = useState<MapFilters>({
@@ -94,6 +110,7 @@ export default function AnalyticsPage() {
     vehicleMake: null,
     dayOfWeek: null,
     searchConducted: null,
+    showPredictions: null,
   });
   
   // Helper to safely fetch JSON
@@ -169,6 +186,22 @@ export default function AnalyticsPage() {
   useEffect(() => {
     fetchHeatmapData();
   }, [fetchHeatmapData]);
+
+  // Fetch ML patterns when enabled
+  useEffect(() => {
+    if (showPatterns && patterns.length === 0) {
+      fetch('/api/insights/ml/patterns?summary=true')
+        .then(res => res.json())
+        .then(json => {
+          if (json.success && json.data?.patterns) {
+            setPatterns(json.data.patterns);
+          }
+        })
+        .catch(err => {
+          console.warn('Failed to load ML patterns:', err.message);
+        });
+    }
+  }, [showPatterns, patterns.length]);
 
   // Fetch drill-down data when area is selected
   useEffect(() => {
@@ -257,7 +290,7 @@ export default function AnalyticsPage() {
           title="Total Traffic Stops"
           value={stats?.overview.totalStops ?? '--'}
           icon={<Activity size={24} />}
-          color="orange"
+          color="violet"
         />
         <StatsCard
           title="Alcohol-Related"
@@ -287,8 +320,8 @@ export default function AnalyticsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                  <Clock size={24} className="text-orange-500" />
+                <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                  <Clock size={24} className="text-violet-500" />
                 </div>
                 <div>
                   <p className="text-sm text-zinc-400">Peak Hour</p>
@@ -302,8 +335,8 @@ export default function AnalyticsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                  <Calendar size={24} className="text-orange-500" />
+                <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                  <Calendar size={24} className="text-violet-500" />
                 </div>
                 <div>
                   <p className="text-sm text-zinc-400">Peak Day</p>
@@ -321,7 +354,7 @@ export default function AnalyticsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-            <MapPin size={20} className="text-orange-500" />
+            <MapPin size={20} className="text-violet-500" />
             Police Activity Map
           </h2>
           <div className="flex items-center gap-2">
@@ -379,6 +412,107 @@ export default function AnalyticsPage() {
               <Focus size={16} className="mr-1" />
               {selectionMode ? 'Exit Analysis' : 'Analyze Area'}
             </Button>
+
+            {/* ML Patterns dropdown */}
+            <div className="relative">
+              <Button
+                variant={showPatterns ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  if (!showPatterns) {
+                    setShowPatterns(true);
+                    setPatternDropdownOpen(true);
+                  } else {
+                    setPatternDropdownOpen(!patternDropdownOpen);
+                  }
+                }}
+              >
+                <BrainCircuit size={16} className="mr-1" />
+                ML Patterns
+                <ChevronDown size={14} className={`ml-1 transition-transform ${patternDropdownOpen ? 'rotate-180' : ''}`} />
+              </Button>
+
+              {/* Pattern selector dropdown */}
+              {patternDropdownOpen && showPatterns && (
+                <div className="absolute top-full right-0 mt-2 w-80 bg-zinc-900/95 backdrop-blur-sm rounded-lg border border-zinc-700 shadow-xl z-50 max-h-96 overflow-y-auto">
+                  <div className="p-3 border-b border-zinc-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-white">Discovered Patterns</span>
+                      <button
+                        onClick={() => {
+                          setShowPatterns(false);
+                          setSelectedPatternId(null);
+                          setPatternDropdownOpen(false);
+                        }}
+                        className="text-xs text-zinc-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Select a pattern to see its locations on the map
+                    </p>
+                  </div>
+
+                  {patterns.length === 0 ? (
+                    <div className="p-4 text-center text-zinc-400 text-sm">
+                      Loading patterns...
+                    </div>
+                  ) : (
+                    <div className="p-2">
+                      {/* Group by pattern type */}
+                      {['time_cluster', 'method_zone', 'day_pattern'].map(type => {
+                        const typePatterns = patterns.filter(p => p.type === type);
+                        if (typePatterns.length === 0) return null;
+
+                        const typeLabels: Record<string, string> = {
+                          'time_cluster': 'Time Clusters',
+                          'method_zone': 'Detection Method Zones',
+                          'day_pattern': 'Day Patterns',
+                        };
+
+                        return (
+                          <div key={type} className="mb-2">
+                            <div className="text-xs text-zinc-500 px-2 py-1 uppercase tracking-wide">
+                              {typeLabels[type] || type}
+                            </div>
+                            {typePatterns.map(pattern => (
+                              <button
+                                key={pattern.id}
+                                onClick={() => {
+                                  setSelectedPatternId(selectedPatternId === pattern.id ? null : pattern.id);
+                                }}
+                                className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                                  selectedPatternId === pattern.id
+                                    ? 'bg-zinc-700'
+                                    : 'hover:bg-zinc-800'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: pattern.style.color }}
+                                  />
+                                  <span className="text-sm text-white flex-1 truncate">
+                                    {pattern.name}
+                                  </span>
+                                  <span className="text-xs text-zinc-400">
+                                    {pattern.locationCount}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-zinc-500 mt-0.5 pl-5 truncate">
+                                  {pattern.description}
+                                </p>
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
@@ -419,6 +553,22 @@ export default function AnalyticsPage() {
                 }}
               />
 
+              {/* ML Risk Prediction heatmap */}
+              <PredictionLayer
+                visible={mapFilters.showPredictions === true}
+                hour={mapFilters.hourStart}
+                day={mapFilters.dayOfWeek}
+              />
+
+              {/* ML Pattern markers */}
+              <PatternMarkersLayer
+                visible={showPatterns}
+                selectedPatternId={selectedPatternId}
+                onPatternLocationClick={(loc, pattern) => {
+                  console.log('Pattern location clicked:', loc, pattern);
+                }}
+              />
+
               {/* Area selection tool */}
               {selectionMode && (
                 <AreaSelectionTool
@@ -440,7 +590,43 @@ export default function AnalyticsPage() {
             className="absolute top-4 left-4 w-64"
             vehicleMakes={stats?.vehicleMakes || []}
           />
-          
+
+          {/* Selected Pattern Info */}
+          {selectedPatternId && showPatterns && (
+            <div className="absolute top-4 right-4 bg-zinc-900/95 backdrop-blur-sm rounded-lg p-3 border border-zinc-700 max-w-xs z-10">
+              {(() => {
+                const pattern = patterns.find(p => p.id === selectedPatternId);
+                if (!pattern) return null;
+                return (
+                  <>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: pattern.style.color }}
+                      />
+                      <span className="text-sm font-medium text-white">{pattern.name}</span>
+                      <button
+                        onClick={() => setSelectedPatternId(null)}
+                        className="ml-auto p-1 hover:bg-zinc-700 rounded"
+                      >
+                        <X size={14} className="text-zinc-400" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-zinc-400 mb-2">{pattern.description}</p>
+                    <div className="flex items-center gap-4 text-xs">
+                      <span className="text-zinc-500">
+                        <span className="text-white font-medium">{pattern.locationCount}</span> locations
+                      </span>
+                      <span className="text-zinc-500">
+                        Type: <span className="text-zinc-300">{pattern.type.replace('_', ' ')}</span>
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
           {/* Selected Stop Details */}
           {selectedStop && (
             <div className="absolute bottom-4 left-4 right-4 max-w-md bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-xl p-4 shadow-xl">
@@ -487,7 +673,7 @@ export default function AnalyticsPage() {
                 ) : null}
                 {selectedStop.accident ? (
                   <div className="col-span-2">
-                    <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs rounded">Accident</span>
+                    <span className="px-2 py-0.5 bg-violet-500/20 text-violet-400 text-xs rounded">Accident</span>
                   </div>
                 ) : null}
               </div>
@@ -530,7 +716,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="bg-zinc-800/50 rounded-lg p-2.5">
                   <p className="text-zinc-400 text-xs mb-1">Avg. Speed Over</p>
-                  <p className="text-lg font-semibold text-orange-400">
+                  <p className="text-lg font-semibold text-violet-400">
                     {selectedTrap.avgSpeedOver ? `+${Number(selectedTrap.avgSpeedOver)} mph` : 'N/A'}
                   </p>
                 </div>
@@ -604,7 +790,7 @@ export default function AnalyticsPage() {
                   <span className="text-zinc-400">100</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-[#f97316]" />
+                  <span className="w-3 h-3 rounded-full bg-[#a855f7]" />
                   <span className="text-zinc-400">500</span>
                 </div>
                 <div className="flex items-center gap-1">

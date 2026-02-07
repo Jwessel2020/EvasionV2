@@ -40,7 +40,7 @@ const getMethodBgColor = (method: string) => {
     case 'automated':
       return 'bg-purple-500';
     default:
-      return 'bg-orange-500';
+      return 'bg-violet-500';
   }
 };
 
@@ -64,7 +64,7 @@ export function DetectionMethodBreakdown({ data }: DetectionMethodBreakdownProps
     return (
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Radio size={18} className="text-orange-400" />
+          <Radio size={18} className="text-violet-400" />
           Detection Method Breakdown
         </h3>
         <p className="text-zinc-500 text-center py-8">No detection method data available</p>
@@ -75,7 +75,7 @@ export function DetectionMethodBreakdown({ data }: DetectionMethodBreakdownProps
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <Radio size={18} className="text-orange-400" />
+        <Radio size={18} className="text-violet-400" />
         Detection Method Breakdown
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

@@ -32,19 +32,19 @@ export function FriendMarker({ friend, onClick }: FriendMarkerProps) {
     el.className = 'friend-marker';
     el.innerHTML = `
       <div class="relative group cursor-pointer">
-        <div class="w-10 h-10 rounded-full bg-zinc-900 border-3 border-orange-500 flex items-center justify-center overflow-hidden shadow-lg transform transition-transform group-hover:scale-110">
+        <div class="w-10 h-10 rounded-full bg-zinc-900 border-3 border-violet-500 flex items-center justify-center overflow-hidden shadow-lg transform transition-transform group-hover:scale-110">
           ${friend.avatarUrl 
             ? `<img src="${friend.avatarUrl}" alt="${friend.displayName}" class="w-full h-full object-cover" />`
-            : `<span class="text-orange-500 font-bold text-sm">${friend.displayName.charAt(0)}</span>`
+            : `<span class="text-violet-500 font-bold text-sm">${friend.displayName.charAt(0)}</span>`
           }
         </div>
         ${friend.heading !== undefined ? `
-          <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-6 border-l-transparent border-r-transparent border-t-orange-500" 
+          <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-6 border-l-transparent border-r-transparent border-t-violet-500" 
                style="transform: translateX(-50%) rotate(${friend.heading}deg);"></div>
         ` : ''}
         <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-zinc-900/90 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
           ${friend.displayName}
-          ${friend.speed ? `<span class="text-orange-400 ml-1">${Math.round(friend.speed)} mph</span>` : ''}
+          ${friend.speed ? `<span class="text-violet-400 ml-1">${Math.round(friend.speed)} mph</span>` : ''}
         </div>
       </div>
     `;

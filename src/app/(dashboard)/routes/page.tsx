@@ -125,7 +125,7 @@ export default function RoutesPage() {
             placeholder="Search routes, tags, locations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
           />
         </div>
 
@@ -134,7 +134,7 @@ export default function RoutesPage() {
           <select
             value={selectedDifficulty || ''}
             onChange={(e) => setSelectedDifficulty(e.target.value || null)}
-            className="px-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="px-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
             <option value="">All Difficulties</option>
             <option value="EASY">Easy</option>
@@ -147,7 +147,7 @@ export default function RoutesPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="px-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="px-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
             <option value="popular">Most Popular</option>
             <option value="rating">Top Rated</option>
@@ -164,7 +164,7 @@ export default function RoutesPage() {
               <CardContent className="p-0">
                 {/* Thumbnail/Map preview */}
                 <div className="h-40 bg-zinc-800 rounded-t-xl relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-transparent" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <MapPin size={48} className="text-zinc-600" />
                   </div>
@@ -176,7 +176,7 @@ export default function RoutesPage() {
 
                 {/* Content */}
                 <div className="p-4">
-                  <h3 className="text-lg font-semibold text-white group-hover:text-orange-400 transition-colors mb-1">
+                  <h3 className="text-lg font-semibold text-white group-hover:text-violet-400 transition-colors mb-1">
                     {route.name}
                   </h3>
                   <p className="text-sm text-zinc-400 line-clamp-2 mb-3">
@@ -213,7 +213,7 @@ export default function RoutesPage() {
 
                   {/* Creator */}
                   <div className="mt-3 pt-3 border-t border-zinc-800 text-sm text-zinc-500">
-                    by <span className="text-orange-400">@{route.creatorUsername}</span>
+                    by <span className="text-violet-400">@{route.creatorUsername}</span>
                   </div>
                 </div>
               </CardContent>

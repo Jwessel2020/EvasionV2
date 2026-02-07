@@ -11,3 +11,7 @@ export { HeatmapLayer } from './HeatmapLayer';
 export { PoliceStopsLayer } from './PoliceStopsLayer';
 export { SpeedTrapLayer } from './SpeedTrapLayer';
 export { MapFilterPanel, type MapFilters } from './MapFilterPanel';
+export { HotspotMarkers } from './HotspotMarkers';
+export { PredictionLayer } from './PredictionLayer';
+export { PatternMarkersLayer } from './PatternMarkersLayer';
+export { CarSpottingLayer } from './CarSpottingLayer';

@@ -1,0 +1,22 @@
+# Evasion V2 ML Dependencies
+# Install with: pip install -r requirements.txt
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+
+# Explainability & Statistics
+shap>=0.42.0
+scipy>=1.10.0
+
+# Database
+psycopg2-binary>=2.9.0
+
+# Utilities
+python-dotenv>=1.0.0
+joblib>=1.3.0
+tqdm>=4.65.0

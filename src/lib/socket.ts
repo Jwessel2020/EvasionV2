@@ -6,6 +6,22 @@
 import { io, Socket } from 'socket.io-client';
 import type { LiveUserPin, PoliceAlert, Coordinates } from '@/types';
 
+// Car spotting type for real-time updates
+interface CarSpottingEvent {
+  id: string;
+  spotterId: string;
+  spotterUsername: string;
+  location: { latitude: number; longitude: number };
+  make: string;
+  model: string;
+  color?: string;
+  year?: number;
+  photos: string[];
+  videoUrl?: string;
+  description?: string;
+  spottedAt: number;
+}
+
 // Socket event types
 interface ServerToClientEvents {
   'friend:location': (data: LiveUserPin) => void;
@@ -13,6 +29,7 @@ interface ServerToClientEvents {
   'alert:new': (alert: PoliceAlert) => void;
   'alert:confirmed': (alert: PoliceAlert) => void;
   'alert:expired': (alertId: string) => void;
+  'car:spotted': (spotting: CarSpottingEvent) => void;
   'error': (message: string) => void;
 }
 
@@ -33,6 +50,18 @@ interface ClientToServerEvents {
     description?: string;
   }) => void;
   'alert:confirm': (alertId: string) => void;
+  'car:spotted': (data: {
+    id?: string;
+    latitude: number;
+    longitude: number;
+    make: string;
+    model: string;
+    color?: string;
+    year?: number;
+    photos: string[];
+    videoUrl?: string;
+    description?: string;
+  }) => void;
 }
 
 type EvasionSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -170,3 +199,37 @@ export function confirmAlert(alertId: string): void {
     s.emit('alert:confirm', alertId);
   }
 }
+
+/**
+ * Report a car spotting (broadcasts in real-time to all users)
+ */
+export function reportCarSpotting(data: {
+  id?: string;
+  latitude: number;
+  longitude: number;
+  make: string;
+  model: string;
+  color?: string;
+  year?: number;
+  photos: string[];
+  videoUrl?: string;
+  description?: string;
+}): void {
+  const s = getSocket();
+  if (s.connected) {
+    s.emit('car:spotted', data);
+  }
+}
+
+/**
+ * Subscribe to car spotting events
+ */
+export function onCarSpotted(
+  callback: (spotting: CarSpottingEvent) => void
+): () => void {
+  const s = getSocket();
+  s.on('car:spotted', callback);
+  return () => s.off('car:spotted', callback);
+}
+
+export type { CarSpottingEvent };

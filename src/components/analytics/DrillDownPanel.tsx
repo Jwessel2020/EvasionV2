@@ -88,7 +88,7 @@ export function DrillDownPanel({ data, isLoading, bounds, onClose }: DrillDownPa
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-1">
-                <TrendingUp size={16} className="text-orange-500" />
+                <TrendingUp size={16} className="text-violet-500" />
                 <p className="text-zinc-400 text-xs">Total Stops</p>
               </div>
               <p className="text-2xl font-bold text-white">
@@ -135,7 +135,7 @@ export function DrillDownPanel({ data, isLoading, bounds, onClose }: DrillDownPa
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
                 <p className="text-zinc-400 text-xs mb-1">Avg Speed Over</p>
-                <p className="text-xl font-bold text-orange-400">
+                <p className="text-xl font-bold text-violet-400">
                   +{data.speedStats.avgSpeedOver.toFixed(1)} mph
                 </p>
               </div>

@@ -123,7 +123,7 @@ export function SpeedAnalytics({ className }: SpeedAnalyticsProps) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Gauge className="text-orange-500" />
+            <Gauge className="text-violet-500" />
             Speed Violation Analytics
           </h2>
           <p className="text-zinc-400 mt-1">
@@ -179,7 +179,7 @@ export function SpeedAnalytics({ className }: SpeedAnalyticsProps) {
                   {isLoading ? '...' : stats?.totalStops.toLocaleString()}
                 </p>
               </div>
-              <Gauge className="text-orange-500" size={32} />
+              <Gauge className="text-violet-500" size={32} />
             </div>
           </CardContent>
         </Card>
@@ -245,7 +245,7 @@ export function SpeedAnalytics({ className }: SpeedAnalyticsProps) {
       <Card className="bg-zinc-900/50 border-zinc-800 mb-6">
         <CardContent className="p-4">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Radio size={18} className="text-orange-400" />
+            <Radio size={18} className="text-violet-400" />
             Detection Method Breakdown
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -261,7 +261,7 @@ export function SpeedAnalytics({ className }: SpeedAnalyticsProps) {
                   <p className="text-zinc-400 text-sm">{m.count.toLocaleString()}</p>
                   <div className="mt-2 bg-zinc-700 rounded-full h-2 overflow-hidden">
                     <div 
-                      className="h-full bg-orange-500 transition-all duration-500"
+                      className="h-full bg-violet-500 transition-all duration-500"
                       style={{ width: `${m.percentage}%` }}
                     />
                   </div>
