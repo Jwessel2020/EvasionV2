@@ -22,6 +22,8 @@ interface PoliceStopsLayerProps {
     minSpeedOver?: number | null;
     speedTrapsOnly?: boolean | null;
     vehicleMake?: string | null;
+    // Vehicle marking filter
+    vehicleMarking?: 'marked' | 'unmarked' | null;
   };
   onStopClick?: (properties: Record<string, unknown>) => void;
 }
@@ -110,6 +112,9 @@ export function PoliceStopsLayer({
       if (filters.searchConducted) {
         params.set('searchConducted', 'true');
       }
+      if (filters.vehicleMarking) {
+        params.set('vehicleMarking', filters.vehicleMarking);
+      }
 
       const res = await fetch(`/api/analytics/points?${params}`, {
         signal: abortControllerRef.current.signal,
@@ -153,9 +158,9 @@ export function PoliceStopsLayer({
             type: 'geojson',
             data: { type: 'FeatureCollection', features: [] },
             cluster: true,
-            clusterMaxZoom: lowDetailMode ? 22 : 13,
-            clusterRadius: 80, // Larger radius for better grouping
-            clusterMinPoints: 2, // Minimum 2 points to form a cluster
+            clusterMaxZoom: lowDetailMode ? 22 : 12,
+            clusterRadius: 40, // Smaller radius = less aggressive clustering
+            clusterMinPoints: 3, // Require 3+ points to form a cluster
             clusterProperties: {
               // Aggregate properties for cluster info
               alcoholCount: ['+', ['case', ['get', 'alcohol'], 1, 0]],

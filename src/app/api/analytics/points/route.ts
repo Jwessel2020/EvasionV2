@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
     const speedTrapsOnly = searchParams.get('speedTrapsOnly') === 'true';
     const vehicleMake = searchParams.get('vehicleMake');
     const searchConducted = searchParams.get('searchConducted') === 'true';
+    const vehicleMarking = searchParams.get('vehicleMarking'); // 'marked' | 'unmarked' | null
 
     // Build WHERE conditions
     const conditions: string[] = [];
@@ -133,6 +134,15 @@ export async function GET(request: NextRequest) {
     // Search conducted filter
     if (searchConducted) {
       conditions.push(`search_conducted = true`);
+    }
+
+    // Vehicle marking filter (marked vs unmarked police vehicles)
+    if (vehicleMarking === 'marked') {
+      // Marked vehicles: arrest_type contains "Marked" but NOT "Unmarked"
+      conditions.push(`arrest_type ILIKE '%Marked%' AND arrest_type NOT ILIKE '%Unmarked%'`);
+    } else if (vehicleMarking === 'unmarked') {
+      // Unmarked vehicles: arrest_type contains "Unmarked"
+      conditions.push(`arrest_type ILIKE '%Unmarked%'`);
     }
 
     // Speed trap detection - stationary detection methods only

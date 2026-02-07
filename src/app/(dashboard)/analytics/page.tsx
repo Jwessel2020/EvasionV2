@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MapProvider, BaseMap, HeatmapLayer, PoliceStopsLayer, SpeedTrapLayer, MapFilterPanel, PatternMarkersLayer, type MapFilters } from '@/components/map';
+import { MapProvider, BaseMap, PoliceStopsLayer, SpeedTrapLayer, MapFilterPanel, PatternMarkersLayer, type MapFilters } from '@/components/map';
 import { PredictionLayer } from '@/components/map/PredictionLayer';
 import { AreaSelectionTool } from '@/components/map/AreaSelectionTool';
 import { StatsCard, TimeChart, TopList, SpeedAnalytics, DrillDownPanel } from '@/components/analytics';
@@ -14,7 +14,6 @@ import {
   Clock,
   MapPin,
   RefreshCw,
-  Layers,
   Calendar,
   CircleDot,
   Target,
@@ -22,6 +21,8 @@ import {
   Focus,
   BrainCircuit,
   ChevronDown,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 
 interface StatsData {
@@ -62,16 +63,12 @@ export default function AnalyticsPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [hourlyData, setHourlyData] = useState<TimePatternData[]>([]);
   const [dailyData, setDailyData] = useState<TimePatternData[]>([]);
-  const [heatmapData, setHeatmapData] = useState<GeoJSON.FeatureCollection | null>(null);
-  
+
   const [isLoading, setIsLoading] = useState(true);
-  const [showHeatmap, setShowHeatmap] = useState(false);
   const [showPoints, setShowPoints] = useState(true);
   const [showSpeedTraps, setShowSpeedTraps] = useState(true); // Show speed traps by default
   const [lowDetailMode, setLowDetailMode] = useState(false);
   const [showAllPoints, setShowAllPoints] = useState(false);
-  const [selectedHour, setSelectedHour] = useState<number | null>(null);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [selectedStop, setSelectedStop] = useState<Record<string, unknown> | null>(null);
   const [selectedTrap, setSelectedTrap] = useState<Record<string, unknown> | null>(null);
 
@@ -81,6 +78,9 @@ export default function AnalyticsPage() {
   const [drillDownData, setDrillDownData] = useState<any | null>(null);
   const [isLoadingDrillDown, setIsLoadingDrillDown] = useState(false);
   const [drillDownError, setDrillDownError] = useState<string | null>(null);
+
+  // Fullscreen map state
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
 
   // ML Pattern state
   const [showPatterns, setShowPatterns] = useState(false);
@@ -110,6 +110,7 @@ export default function AnalyticsPage() {
     vehicleMake: null,
     dayOfWeek: null,
     searchConducted: null,
+    vehicleMarking: null,
     showPredictions: null,
   });
   
@@ -145,47 +146,18 @@ export default function AnalyticsPage() {
       if (dailyJson?.success) {
         setDailyData(dailyJson.data);
       }
-      
-      // Fetch heatmap data
-      await fetchHeatmapData();
-      
+
     } catch (error) {
       console.error('Error fetching analytics data:', error);
     } finally {
       setIsLoading(false);
     }
   }, []);
-  
-  // Fetch heatmap data with filters
-  const fetchHeatmapData = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (selectedHour !== null) {
-        params.set('hourStart', selectedHour.toString());
-        params.set('hourEnd', selectedHour.toString());
-      }
-      if (selectedDay !== null) {
-        params.set('dayOfWeek', selectedDay.toString());
-      }
-      
-      const json = await safeFetch(`/api/analytics/heatmap?${params}`);
-      if (json?.success) {
-        setHeatmapData(json.data);
-      }
-    } catch (error) {
-      console.error('Error fetching heatmap:', error);
-    }
-  }, [selectedHour, selectedDay]);
-  
+
   // Initial fetch
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-  
-  // Refetch heatmap when filters change
-  useEffect(() => {
-    fetchHeatmapData();
-  }, [fetchHeatmapData]);
 
   // Fetch ML patterns when enabled
   useEffect(() => {
@@ -202,6 +174,17 @@ export default function AnalyticsPage() {
         });
     }
   }, [showPatterns, patterns.length]);
+
+  // Handle Escape key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMapFullscreen) {
+        setIsMapFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMapFullscreen]);
 
   // Fetch drill-down data when area is selected
   useEffect(() => {
@@ -379,14 +362,6 @@ export default function AnalyticsPage() {
               {showAllPoints ? 'All Points' : 'Clustered'}
             </Button>
             <Button
-              variant={showHeatmap ? 'secondary' : 'outline'}
-              size="sm"
-              onClick={() => setShowHeatmap(!showHeatmap)}
-            >
-              <Activity size={16} className="mr-1" />
-              Heatmap
-            </Button>
-            <Button
               variant={showSpeedTraps ? 'danger' : 'outline'}
               size="sm"
               onClick={() => setShowSpeedTraps(!showSpeedTraps)}
@@ -513,11 +488,43 @@ export default function AnalyticsPage() {
                 </div>
               )}
             </div>
+
+            {/* Fullscreen toggle */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMapFullscreen(!isMapFullscreen)}
+              title={isMapFullscreen ? 'Exit fullscreen' : 'Fullscreen map'}
+            >
+              {isMapFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </Button>
           </div>
         </div>
-        
+
+        {/* Fullscreen backdrop */}
+        {isMapFullscreen && (
+          <div
+            className="fixed inset-0 bg-black/80 z-40"
+            onClick={() => setIsMapFullscreen(false)}
+          />
+        )}
+
         {/* Map with filter panel */}
-        <div className="h-[600px] rounded-xl overflow-hidden border border-zinc-800 relative">
+        <div className={`rounded-xl overflow-hidden border border-zinc-800 relative transition-all duration-300 ${
+          isMapFullscreen
+            ? 'fixed inset-4 z-50'
+            : 'h-[750px]'
+        }`}>
+          {/* Fullscreen close button */}
+          {isMapFullscreen && (
+            <button
+              onClick={() => setIsMapFullscreen(false)}
+              className="absolute top-4 right-4 z-50 p-2 bg-zinc-900/90 hover:bg-zinc-800 rounded-lg border border-zinc-700 transition-colors"
+              title="Exit fullscreen (Esc)"
+            >
+              <Minimize2 size={20} className="text-white" />
+            </button>
+          )}
           <MapProvider>
             <BaseMap
               initialCenter={[-77.1, 39.05]} // Maryland / Montgomery County area
@@ -532,16 +539,7 @@ export default function AnalyticsPage() {
                 filters={mapFilters}
                 onStopClick={(props) => setSelectedStop(props)}
               />
-              
-              {/* Heatmap overlay */}
-              <HeatmapLayer
-                data={heatmapData}
-                visible={showHeatmap}
-                radius={25}
-                intensity={1.5}
-                opacity={0.6}
-              />
-              
+
               {/* Speed Trap markers */}
               <SpeedTrapLayer
                 visible={showSpeedTraps}

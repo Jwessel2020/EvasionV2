@@ -34,6 +34,8 @@ export interface MapFilters {
   speedTrapsOnly: boolean | null; // Show only likely speed trap locations
   vehicleMake: string | null;
   searchConducted: boolean | null;
+  // Vehicle marking filter
+  vehicleMarking: 'marked' | 'unmarked' | null;
   // ML Prediction overlay
   showPredictions: boolean | null;
 }
@@ -131,6 +133,7 @@ export function MapFilterPanel({
     filters.speedTrapsOnly,
     filters.vehicleMake,
     filters.searchConducted,
+    filters.vehicleMarking,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -148,6 +151,7 @@ export function MapFilterPanel({
       speedTrapsOnly: null,
       vehicleMake: null,
       searchConducted: null,
+      vehicleMarking: null,
       showPredictions: null,
     });
   };
@@ -245,6 +249,38 @@ export function MapFilterPanel({
                 )}
               >
                 🔍 Search
+              </button>
+            </div>
+          </div>
+
+          {/* Vehicle Marking Filter */}
+          <div>
+            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
+              <Car size={12} />
+              Vehicle Marking
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => updateFilter('vehicleMarking', filters.vehicleMarking === 'marked' ? null : 'marked')}
+                className={cn(
+                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
+                  filters.vehicleMarking === 'marked'
+                    ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                )}
+              >
+                🚔 Marked
+              </button>
+              <button
+                onClick={() => updateFilter('vehicleMarking', filters.vehicleMarking === 'unmarked' ? null : 'unmarked')}
+                className={cn(
+                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
+                  filters.vehicleMarking === 'unmarked'
+                    ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
+                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                )}
+              >
+                🚗 Unmarked
               </button>
             </div>
           </div>
