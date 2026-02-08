@@ -1,44 +1,58 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { MapProvider, BaseMap } from '@/components/map';
-import { RoutePreviewLayer, RecordedPathLayer } from '@/components/map/RoutePreviewLayer';
+import { RoutePreviewLayer } from '@/components/map/RoutePreviewLayer';
 import { WaypointMarkers } from '@/components/map/WaypointMarkers';
-import { RecordingOverlay, ProcessingOverlay, RoutePreviewOverlay } from '@/components/map/RecordingOverlay';
 import { Button, Input, Card, CardContent } from '@/components/ui';
-import { useRouteBuilderStore } from '@/stores/route-builder-store';
-import { useRouteRecorderStore } from '@/stores/route-recorder-store';
+import { useRouteBuilderStore, type Waypoint } from '@/stores/route-builder-store';
 import { formatDuration } from '@/lib/mapbox/routing';
 import {
   ArrowLeft,
   Save,
   Trash2,
   Undo,
-  Pencil,
-  Radio,
   GripVertical,
   X,
   Navigation,
   Clock,
-  Route as RouteIcon
+  Route as RouteIcon,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 
-type CreationMode = 'draw' | 'record';
+interface RouteData {
+  id: string;
+  name: string;
+  description: string | null;
+  pathCoordinates: [number, number][];
+  waypoints: { lng: number; lat: number; order: number }[] | null;
+  distanceMiles: number;
+  durationSeconds: number | null;
+  estimatedTime: number | null;
+  difficulty: string;
+  tags: string[];
+  isPublic: boolean;
+}
 
-export default function CreateRoutePage() {
+export default function EditRoutePage() {
   const router = useRouter();
-  const [creationMode, setCreationMode] = useState<CreationMode>('draw');
+  const params = useParams();
+  const routeId = params.id as string;
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [routeName, setRouteName] = useState('');
   const [routeDescription, setRouteDescription] = useState('');
   const [difficulty, setDifficulty] = useState('MODERATE');
   const [tags, setTags] = useState('');
+  const [isPublic, setIsPublic] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Route builder store (for draw mode)
+  // Route builder store
   const {
-    mode: builderMode,
+    mode,
     waypoints,
     selectedWaypointIndex,
     routeGeometry,
@@ -46,130 +60,112 @@ export default function CreateRoutePage() {
     routeDuration,
     isCalculating,
     error: builderError,
-    setMode: setBuilderMode,
+    setMode,
     addWaypoint,
     removeWaypoint,
     moveWaypoint,
     selectWaypoint,
     clearRoute,
+    loadRoute,
   } = useRouteBuilderStore();
 
-  // Route recorder store (for record mode)
-  const {
-    state: recordingState,
-    rawPoints,
-    matchedRoute,
-    distance: recordedDistance,
-    duration: recordedDuration,
-    currentPosition,
-    matchConfidence,
-    error: recorderError,
-    startRecording,
-    pauseRecording,
-    resumeRecording,
-    stopRecording,
-    addPoint,
-    discardRoute,
-    acceptRoute,
-  } = useRouteRecorderStore();
-
-  // GPS tracking for record mode
+  // Fetch route data
   useEffect(() => {
-    if (creationMode !== 'record') return;
-    if (recordingState !== 'recording') return;
-
-    let watchId: number | null = null;
-
-    if ('geolocation' in navigator) {
-      watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          addPoint({
-            lng: position.coords.longitude,
-            lat: position.coords.latitude,
-            timestamp: Date.now(),
-            accuracy: position.coords.accuracy,
-            speed: position.coords.speed ?? undefined,
-            heading: position.coords.heading ?? undefined,
-          });
-        },
-        (error) => {
-          console.error('GPS error:', error);
-        },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 1000,
-          timeout: 5000,
+    const fetchRoute = async () => {
+      try {
+        const response = await fetch(`/api/routes/${routeId}`);
+        if (!response.ok) {
+          throw new Error('Route not found');
         }
-      );
-    }
 
-    return () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
+        const data: RouteData = await response.json();
+
+        // Set form values
+        setRouteName(data.name);
+        setRouteDescription(data.description || '');
+        setDifficulty(data.difficulty);
+        setTags(data.tags.join(', '));
+        setIsPublic(data.isPublic);
+
+        // Load route into builder store
+        if (data.waypoints && data.waypoints.length > 0) {
+          // Use saved waypoints
+          const waypointList: Waypoint[] = data.waypoints
+            .sort((a, b) => a.order - b.order)
+            .map((wp, i) => ({
+              id: `wp_loaded_${i}`,
+              lng: wp.lng,
+              lat: wp.lat,
+            }));
+
+          loadRoute(
+            waypointList,
+            data.pathCoordinates,
+            data.distanceMiles,
+            data.durationSeconds || (data.estimatedTime ? data.estimatedTime * 60 : 0)
+          );
+        } else {
+          // Use start/end of path as waypoints
+          const coords = data.pathCoordinates;
+          if (coords.length >= 2) {
+            const waypointList: Waypoint[] = [
+              { id: 'wp_start', lng: coords[0][0], lat: coords[0][1] },
+              { id: 'wp_end', lng: coords[coords.length - 1][0], lat: coords[coords.length - 1][1] },
+            ];
+
+            loadRoute(
+              waypointList,
+              coords,
+              data.distanceMiles,
+              data.durationSeconds || (data.estimatedTime ? data.estimatedTime * 60 : 0)
+            );
+          }
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch route:', err);
+        setError('Failed to load route');
+        setLoading(false);
       }
     };
-  }, [creationMode, recordingState, addPoint]);
 
-  // Initialize draw mode
-  useEffect(() => {
-    if (creationMode === 'draw') {
-      setBuilderMode('drawing');
-    } else {
-      setBuilderMode('idle');
-    }
-  }, [creationMode, setBuilderMode]);
+    fetchRoute();
 
-  // Handle map click for draw mode
+    return () => {
+      // Clear route when leaving page
+      clearRoute();
+    };
+  }, [routeId, loadRoute, clearRoute]);
+
+  // Handle map click for adding waypoints
   const handleMapClick = useCallback((lng: number, lat: number) => {
-    if (creationMode === 'draw') {
+    if (mode === 'editing') {
       addWaypoint(lng, lat);
     }
-  }, [creationMode, addWaypoint]);
-
-  // Handle accepting recorded route
-  const handleAcceptRecordedRoute = () => {
-    const result = acceptRoute();
-    if (result) {
-      // Switch to draw mode with the recorded route
-      setCreationMode('draw');
-      // The recorded route coordinates can be used to populate waypoints
-      // For simplicity, we'll use start and end points as waypoints
-      if (result.coordinates.length >= 2) {
-        const start = result.coordinates[0];
-        const end = result.coordinates[result.coordinates.length - 1];
-        clearRoute();
-        addWaypoint(start[0], start[1]);
-        addWaypoint(end[0], end[1]);
-      }
-    }
-  };
+  }, [mode, addWaypoint]);
 
   // Handle save
   const handleSave = async () => {
-    const finalGeometry = creationMode === 'draw' ? routeGeometry : matchedRoute;
-    const finalDistance = creationMode === 'draw' ? routeDistance : recordedDistance;
-    const finalDuration = creationMode === 'draw' ? routeDuration : recordedDuration;
-
-    if (!finalGeometry || finalGeometry.length < 2 || !routeName) return;
+    if (!routeGeometry || routeGeometry.length < 2 || !routeName) return;
 
     setIsSaving(true);
 
     const routeData = {
       name: routeName,
       description: routeDescription,
-      pathCoordinates: finalGeometry,
+      pathCoordinates: routeGeometry,
       waypoints: waypoints.map((wp, i) => ({ lng: wp.lng, lat: wp.lat, order: i })),
-      distanceMiles: Math.round(finalDistance * 10) / 10,
-      durationSeconds: Math.round(finalDuration),
+      distanceMiles: Math.round(routeDistance * 10) / 10,
+      durationSeconds: Math.round(routeDuration),
       difficulty,
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-      creationMethod: creationMode === 'draw' ? 'manual' : 'recorded',
-      isPublic: true,
+      isPublic,
     };
 
     try {
-      const response = await fetch('/api/routes', {
-        method: 'POST',
+      const response = await fetch(`/api/routes/${routeId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(routeData),
       });
@@ -186,11 +182,31 @@ export default function CreateRoutePage() {
     }
   };
 
-  // Current values based on mode
-  const currentDistance = creationMode === 'draw' ? routeDistance : recordedDistance;
-  const currentDuration = creationMode === 'draw' ? routeDuration : recordedDuration;
-  const currentGeometry = creationMode === 'draw' ? routeGeometry : matchedRoute;
-  const canSave = currentGeometry && currentGeometry.length >= 2 && routeName.trim() !== '';
+  const canSave = routeGeometry && routeGeometry.length >= 2 && routeName.trim() !== '';
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-violet-500 mx-auto" />
+          <p className="text-zinc-400">Loading route...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <p className="text-red-400">{error}</p>
+          <Link href="/routes">
+            <Button variant="secondary">Back to Routes</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-8rem)] flex gap-6">
@@ -198,70 +214,28 @@ export default function CreateRoutePage() {
       <div className="flex-1 relative">
         <MapProvider>
           <BaseMap
-            initialCenter={[-118.2437, 34.0522]}
-            initialZoom={11}
+            initialCenter={routeGeometry && routeGeometry.length > 0 ? routeGeometry[0] : [-118.2437, 34.0522]}
+            initialZoom={12}
             className="w-full h-full rounded-xl overflow-hidden border border-zinc-800"
             onClick={handleMapClick}
           >
-            {/* Draw mode layers */}
-            {creationMode === 'draw' && routeGeometry && routeGeometry.length >= 2 && (
+            {/* Route layer */}
+            {routeGeometry && routeGeometry.length >= 2 && (
               <RoutePreviewLayer
-                id="draw-route"
+                id="edit-route"
                 coordinates={routeGeometry}
                 isCalculating={isCalculating}
               />
             )}
-            {creationMode === 'draw' && waypoints.length > 0 && (
+
+            {/* Waypoint markers */}
+            {waypoints.length > 0 && (
               <WaypointMarkers
                 waypoints={waypoints}
                 selectedIndex={selectedWaypointIndex}
                 onWaypointDrag={moveWaypoint}
                 onWaypointClick={selectWaypoint}
-                draggable={builderMode === 'drawing' || builderMode === 'editing'}
-              />
-            )}
-
-            {/* Record mode layers */}
-            {creationMode === 'record' && rawPoints.length >= 2 && recordingState !== 'preview' && (
-              <RecordedPathLayer
-                id="recording-path"
-                coordinates={rawPoints.map(p => [p.lng, p.lat] as [number, number])}
-              />
-            )}
-            {creationMode === 'record' && matchedRoute && recordingState === 'preview' && (
-              <RoutePreviewLayer
-                id="matched-route"
-                coordinates={matchedRoute}
-                color="#10b981"
-              />
-            )}
-
-            {/* Recording overlay */}
-            {creationMode === 'record' && (recordingState === 'recording' || recordingState === 'paused') && (
-              <RecordingOverlay
-                state={recordingState}
-                currentPosition={currentPosition}
-                distance={recordedDistance}
-                duration={recordedDuration}
-                onPause={pauseRecording}
-                onResume={resumeRecording}
-                onStop={stopRecording}
-              />
-            )}
-
-            {/* Processing overlay */}
-            {creationMode === 'record' && recordingState === 'processing' && (
-              <ProcessingOverlay />
-            )}
-
-            {/* Preview overlay */}
-            {creationMode === 'record' && recordingState === 'preview' && (
-              <RoutePreviewOverlay
-                distance={recordedDistance}
-                duration={recordedDuration}
-                confidence={matchConfidence}
-                onAccept={handleAcceptRecordedRoute}
-                onDiscard={discardRoute}
+                draggable={mode === 'editing'}
               />
             )}
           </BaseMap>
@@ -276,87 +250,59 @@ export default function CreateRoutePage() {
             </Link>
           </div>
 
-          {/* Mode toggle */}
+          {/* Edit mode toggle */}
           <div className="absolute top-4 left-1/2 -translate-x-1/2 flex bg-zinc-900/90 backdrop-blur-sm rounded-lg border border-zinc-700 p-1">
             <button
-              onClick={() => setCreationMode('draw')}
+              onClick={() => setMode(mode === 'editing' ? 'idle' : 'editing')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                creationMode === 'draw'
+                mode === 'editing'
                   ? 'bg-violet-500 text-white'
                   : 'text-zinc-400 hover:text-white'
               }`}
-              disabled={recordingState === 'recording' || recordingState === 'paused'}
             >
-              <Pencil size={16} />
-              Draw
-            </button>
-            <button
-              onClick={() => setCreationMode('record')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                creationMode === 'record'
-                  ? 'bg-violet-500 text-white'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-              disabled={builderMode === 'drawing' && waypoints.length > 0}
-            >
-              <Radio size={16} />
-              Record
+              <Navigation size={16} />
+              {mode === 'editing' ? 'Click to Add Points' : 'View Mode'}
             </button>
           </div>
 
-          {/* Draw mode controls */}
-          {creationMode === 'draw' && (
-            <div className="absolute top-4 right-4 flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (waypoints.length > 0) {
-                    removeWaypoint(waypoints.length - 1);
-                  }
-                }}
-                disabled={waypoints.length === 0 || isCalculating}
-              >
-                <Undo size={16} />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearRoute}
-                disabled={waypoints.length === 0 || isCalculating}
-              >
-                <Trash2 size={16} />
-              </Button>
-            </div>
-          )}
+          {/* Edit controls */}
+          <div className="absolute top-4 right-4 flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (waypoints.length > 0) {
+                  removeWaypoint(waypoints.length - 1);
+                }
+              }}
+              disabled={waypoints.length === 0 || isCalculating}
+            >
+              <Undo size={16} />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearRoute}
+              disabled={waypoints.length === 0 || isCalculating}
+            >
+              <Trash2 size={16} />
+            </Button>
+          </div>
 
-          {/* Record mode start button */}
-          {creationMode === 'record' && recordingState === 'idle' && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
-              <Button
-                onClick={startRecording}
-                className="bg-red-500 hover:bg-red-400 text-white px-8 py-3 text-lg"
-              >
-                <Radio size={20} className="mr-2" />
-                Start Recording
-              </Button>
-            </div>
-          )}
-
-          {/* Draw mode instructions */}
-          {creationMode === 'draw' && waypoints.length === 0 && (
+          {/* Instructions */}
+          {mode === 'editing' && (
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-zinc-900/95 backdrop-blur-sm px-6 py-3 rounded-xl border border-zinc-800 shadow-lg">
               <div className="flex items-center gap-3 text-sm">
                 <Navigation size={18} className="text-violet-500" />
-                <span className="text-zinc-300">Click on the map to add waypoints. Routes will snap to roads automatically.</span>
+                <span className="text-zinc-300">Click to add waypoints, drag to move. Route snaps to roads.</span>
               </div>
             </div>
           )}
 
           {/* Error display */}
-          {(builderError || recorderError) && (
+          {builderError && (
             <div className="absolute bottom-6 left-6 bg-red-900/90 backdrop-blur-sm px-4 py-2 rounded-lg border border-red-700">
-              <p className="text-sm text-red-200">{builderError || recorderError}</p>
+              <p className="text-sm text-red-200">{builderError}</p>
             </div>
           )}
         </MapProvider>
@@ -367,19 +313,15 @@ export default function CreateRoutePage() {
         <Card className="h-full overflow-y-auto">
           <CardContent className="p-6 space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-white mb-1">Create Route</h2>
-              <p className="text-sm text-zinc-400">
-                {creationMode === 'draw'
-                  ? 'Click the map to add waypoints'
-                  : 'Record your drive with GPS'}
-              </p>
+              <h2 className="text-xl font-bold text-white mb-1">Edit Route</h2>
+              <p className="text-sm text-zinc-400">Modify your route</p>
             </div>
 
-            {/* Waypoints list (draw mode) */}
-            {creationMode === 'draw' && waypoints.length > 0 && (
+            {/* Waypoints list */}
+            {waypoints.length > 0 && (
               <div className="space-y-2">
                 <h3 className="text-sm font-medium text-zinc-300">Waypoints</h3>
-                <div className="space-y-1">
+                <div className="space-y-1 max-h-48 overflow-y-auto">
                   {waypoints.map((wp, index) => (
                     <div
                       key={wp.id}
@@ -417,7 +359,7 @@ export default function CreateRoutePage() {
             )}
 
             {/* Route stats */}
-            {currentGeometry && currentGeometry.length >= 2 && (
+            {routeGeometry && routeGeometry.length >= 2 && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-zinc-800/50 rounded-lg p-3">
                   <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1">
@@ -425,7 +367,7 @@ export default function CreateRoutePage() {
                     Distance
                   </div>
                   <p className="text-lg font-bold text-white">
-                    {currentDistance.toFixed(1)} mi
+                    {routeDistance.toFixed(1)} mi
                   </p>
                 </div>
                 <div className="bg-zinc-800/50 rounded-lg p-3">
@@ -434,7 +376,7 @@ export default function CreateRoutePage() {
                     Duration
                   </div>
                   <p className="text-lg font-bold text-white">
-                    {formatDuration(currentDuration)}
+                    {formatDuration(routeDuration)}
                   </p>
                 </div>
               </div>
@@ -444,7 +386,7 @@ export default function CreateRoutePage() {
             {isCalculating && (
               <div className="flex items-center gap-2 text-sm text-violet-400">
                 <div className="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                Calculating route...
+                Recalculating route...
               </div>
             )}
 
@@ -491,6 +433,19 @@ export default function CreateRoutePage() {
                 onChange={(e) => setTags(e.target.value)}
                 hint="Help others find your route"
               />
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="isPublic"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="w-4 h-4 bg-zinc-800 border-zinc-600 rounded focus:ring-violet-500 focus:ring-2"
+                />
+                <label htmlFor="isPublic" className="text-sm text-zinc-300">
+                  Make this route public
+                </label>
+              </div>
             </div>
 
             <div className="pt-4 border-t border-zinc-800 space-y-3">
@@ -501,14 +456,14 @@ export default function CreateRoutePage() {
                 disabled={!canSave || isSaving || isCalculating}
               >
                 <Save size={16} className="mr-2" />
-                Save Route
+                Save Changes
               </Button>
               <p className="text-xs text-zinc-500 text-center">
-                {!currentGeometry || currentGeometry.length < 2
-                  ? 'Add at least 2 waypoints to save'
+                {!routeGeometry || routeGeometry.length < 2
+                  ? 'Route must have at least 2 points'
                   : !routeName.trim()
                     ? 'Enter a route name to save'
-                    : 'Route will be public by default'
+                    : 'Changes will be saved immediately'
                 }
               </p>
             </div>

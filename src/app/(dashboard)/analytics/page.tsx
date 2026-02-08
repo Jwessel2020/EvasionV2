@@ -1,7 +1,23 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MapProvider, BaseMap, PoliceStopsLayer, SpeedTrapLayer, MapFilterPanel, PatternMarkersLayer, type MapFilters } from '@/components/map';
+import {
+  MapProvider,
+  BaseMap,
+  PoliceStopsLayer,
+  SpeedTrapLayer,
+  MapFilterPanel,
+  PatternMarkersLayer,
+  MapControlBar,
+  StopDetailsPopup,
+  SpeedTrapPopup,
+  MapLegend,
+  SelectedPatternInfo,
+  AddressSearch,
+  type MapFilters,
+  type StopDetails,
+  type SpeedTrapDetails,
+} from '@/components/map';
 import { PredictionLayer } from '@/components/map/PredictionLayer';
 import { AreaSelectionTool } from '@/components/map/AreaSelectionTool';
 import { StatsCard, TimeChart, TopList, SpeedAnalytics, DrillDownPanel } from '@/components/analytics';
@@ -15,13 +31,6 @@ import {
   MapPin,
   RefreshCw,
   Calendar,
-  CircleDot,
-  Target,
-  X,
-  Focus,
-  BrainCircuit,
-  ChevronDown,
-  Maximize2,
   Minimize2,
 } from 'lucide-react';
 
@@ -69,8 +78,8 @@ export default function AnalyticsPage() {
   const [showSpeedTraps, setShowSpeedTraps] = useState(true); // Show speed traps by default
   const [lowDetailMode, setLowDetailMode] = useState(false);
   const [showAllPoints, setShowAllPoints] = useState(false);
-  const [selectedStop, setSelectedStop] = useState<Record<string, unknown> | null>(null);
-  const [selectedTrap, setSelectedTrap] = useState<Record<string, unknown> | null>(null);
+  const [selectedStop, setSelectedStop] = useState<StopDetails | null>(null);
+  const [selectedTrap, setSelectedTrap] = useState<SpeedTrapDetails | null>(null);
 
   // Area selection state
   const [selectionMode, setSelectionMode] = useState(false);
@@ -93,7 +102,6 @@ export default function AnalyticsPage() {
     style: { icon: string; color: string; borderColor: string };
   }>>([]);
   const [selectedPatternId, setSelectedPatternId] = useState<string | null>(null);
-  const [patternDropdownOpen, setPatternDropdownOpen] = useState(false);
   
   // Map filters for points layer
   const [mapFilters, setMapFilters] = useState<MapFilters>({
@@ -340,165 +348,33 @@ export default function AnalyticsPage() {
             <MapPin size={20} className="text-violet-500" />
             Police Activity Map
           </h2>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={showPoints ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setShowPoints(!showPoints)}
-            >
-              <CircleDot size={16} className="mr-1" />
-              Points
-            </Button>
-            <Button
-              variant={showAllPoints ? 'danger' : 'outline'}
-              size="sm"
-              onClick={() => {
-                setShowAllPoints(!showAllPoints);
-                if (!showAllPoints) setLowDetailMode(false); // Can't have both
-              }}
-              title="Show all points without clustering (may be slow)"
-            >
-              <MapPin size={16} className="mr-1" />
-              {showAllPoints ? 'All Points' : 'Clustered'}
-            </Button>
-            <Button
-              variant={showSpeedTraps ? 'danger' : 'outline'}
-              size="sm"
-              onClick={() => setShowSpeedTraps(!showSpeedTraps)}
-              title="Show identified speed trap locations"
-            >
-              <Target size={16} className="mr-1" />
-              {showSpeedTraps ? 'Speed Traps' : 'Speed Traps'}
-            </Button>
-            <Button
-              variant={selectionMode ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => {
-                setSelectionMode(!selectionMode);
-                if (selectionMode) {
-                  // Clear selection when exiting mode
-                  setSelectedBounds(null);
-                  setDrillDownData(null);
-                  setDrillDownError(null);
-                }
-              }}
-              title="Click and drag to draw a rectangle on the map to analyze violations in that area"
-            >
-              <Focus size={16} className="mr-1" />
-              {selectionMode ? 'Exit Analysis' : 'Analyze Area'}
-            </Button>
-
-            {/* ML Patterns dropdown */}
-            <div className="relative">
-              <Button
-                variant={showPatterns ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => {
-                  if (!showPatterns) {
-                    setShowPatterns(true);
-                    setPatternDropdownOpen(true);
-                  } else {
-                    setPatternDropdownOpen(!patternDropdownOpen);
-                  }
-                }}
-              >
-                <BrainCircuit size={16} className="mr-1" />
-                ML Patterns
-                <ChevronDown size={14} className={`ml-1 transition-transform ${patternDropdownOpen ? 'rotate-180' : ''}`} />
-              </Button>
-
-              {/* Pattern selector dropdown */}
-              {patternDropdownOpen && showPatterns && (
-                <div className="absolute top-full right-0 mt-2 w-80 bg-zinc-900/95 backdrop-blur-sm rounded-lg border border-zinc-700 shadow-xl z-50 max-h-96 overflow-y-auto">
-                  <div className="p-3 border-b border-zinc-700">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-white">Discovered Patterns</span>
-                      <button
-                        onClick={() => {
-                          setShowPatterns(false);
-                          setSelectedPatternId(null);
-                          setPatternDropdownOpen(false);
-                        }}
-                        className="text-xs text-zinc-400 hover:text-white"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      Select a pattern to see its locations on the map
-                    </p>
-                  </div>
-
-                  {patterns.length === 0 ? (
-                    <div className="p-4 text-center text-zinc-400 text-sm">
-                      Loading patterns...
-                    </div>
-                  ) : (
-                    <div className="p-2">
-                      {/* Group by pattern type */}
-                      {['time_cluster', 'method_zone', 'day_pattern'].map(type => {
-                        const typePatterns = patterns.filter(p => p.type === type);
-                        if (typePatterns.length === 0) return null;
-
-                        const typeLabels: Record<string, string> = {
-                          'time_cluster': 'Time Clusters',
-                          'method_zone': 'Detection Method Zones',
-                          'day_pattern': 'Day Patterns',
-                        };
-
-                        return (
-                          <div key={type} className="mb-2">
-                            <div className="text-xs text-zinc-500 px-2 py-1 uppercase tracking-wide">
-                              {typeLabels[type] || type}
-                            </div>
-                            {typePatterns.map(pattern => (
-                              <button
-                                key={pattern.id}
-                                onClick={() => {
-                                  setSelectedPatternId(selectedPatternId === pattern.id ? null : pattern.id);
-                                }}
-                                className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                                  selectedPatternId === pattern.id
-                                    ? 'bg-zinc-700'
-                                    : 'hover:bg-zinc-800'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: pattern.style.color }}
-                                  />
-                                  <span className="text-sm text-white flex-1 truncate">
-                                    {pattern.name}
-                                  </span>
-                                  <span className="text-xs text-zinc-400">
-                                    {pattern.locationCount}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-zinc-500 mt-0.5 pl-5 truncate">
-                                  {pattern.description}
-                                </p>
-                              </button>
-                            ))}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Fullscreen toggle */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMapFullscreen(!isMapFullscreen)}
-              title={isMapFullscreen ? 'Exit fullscreen' : 'Fullscreen map'}
-            >
-              {isMapFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            </Button>
-          </div>
+          <MapControlBar
+            showPoints={showPoints}
+            onTogglePoints={() => setShowPoints(!showPoints)}
+            showAllPoints={showAllPoints}
+            onToggleAllPoints={() => {
+              setShowAllPoints(!showAllPoints);
+              if (!showAllPoints) setLowDetailMode(false);
+            }}
+            showSpeedTraps={showSpeedTraps}
+            onToggleSpeedTraps={() => setShowSpeedTraps(!showSpeedTraps)}
+            selectionMode={selectionMode}
+            onToggleSelectionMode={() => {
+              setSelectionMode(!selectionMode);
+              if (selectionMode) {
+                setSelectedBounds(null);
+                setDrillDownData(null);
+                setDrillDownError(null);
+              }
+            }}
+            showPatterns={showPatterns}
+            onTogglePatterns={() => setShowPatterns(!showPatterns)}
+            patterns={patterns}
+            selectedPatternId={selectedPatternId}
+            onSelectPattern={setSelectedPatternId}
+            isFullscreen={isMapFullscreen}
+            onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
+          />
         </div>
 
         {/* Fullscreen backdrop */}
@@ -537,7 +413,7 @@ export default function AnalyticsPage() {
                 lowDetailMode={lowDetailMode}
                 showAllPoints={showAllPoints}
                 filters={mapFilters}
-                onStopClick={(props) => setSelectedStop(props)}
+                onStopClick={(props) => setSelectedStop(props as StopDetails)}
               />
 
               {/* Speed Trap markers */}
@@ -546,8 +422,8 @@ export default function AnalyticsPage() {
                 year={mapFilters.year}
                 minStops={5}
                 onTrapClick={(props) => {
-                  setSelectedTrap(props);
-                  setSelectedStop(null); // Close other popup
+                  setSelectedTrap(props as SpeedTrapDetails);
+                  setSelectedStop(null);
                 }}
               />
 
@@ -562,8 +438,8 @@ export default function AnalyticsPage() {
               <PatternMarkersLayer
                 visible={showPatterns}
                 selectedPatternId={selectedPatternId}
-                onPatternLocationClick={(loc, pattern) => {
-                  console.log('Pattern location clicked:', loc, pattern);
+                onPatternLocationClick={() => {
+                  // TODO: Show pattern location details
                 }}
               />
 
@@ -579,6 +455,11 @@ export default function AnalyticsPage() {
                 />
               )}
             </BaseMap>
+
+            {/* Address Search */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-80">
+              <AddressSearch placeholder="Search address..." />
+            </div>
           </MapProvider>
           
           {/* Filter Panel */}
@@ -591,163 +472,23 @@ export default function AnalyticsPage() {
 
           {/* Selected Pattern Info */}
           {selectedPatternId && showPatterns && (
-            <div className="absolute top-4 right-4 bg-zinc-900/95 backdrop-blur-sm rounded-lg p-3 border border-zinc-700 max-w-xs z-10">
-              {(() => {
-                const pattern = patterns.find(p => p.id === selectedPatternId);
-                if (!pattern) return null;
-                return (
-                  <>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: pattern.style.color }}
-                      />
-                      <span className="text-sm font-medium text-white">{pattern.name}</span>
-                      <button
-                        onClick={() => setSelectedPatternId(null)}
-                        className="ml-auto p-1 hover:bg-zinc-700 rounded"
-                      >
-                        <X size={14} className="text-zinc-400" />
-                      </button>
-                    </div>
-                    <p className="text-xs text-zinc-400 mb-2">{pattern.description}</p>
-                    <div className="flex items-center gap-4 text-xs">
-                      <span className="text-zinc-500">
-                        <span className="text-white font-medium">{pattern.locationCount}</span> locations
-                      </span>
-                      <span className="text-zinc-500">
-                        Type: <span className="text-zinc-300">{pattern.type.replace('_', ' ')}</span>
-                      </span>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
+            <SelectedPatternInfo
+              pattern={patterns.find(p => p.id === selectedPatternId) || null}
+              onClose={() => setSelectedPatternId(null)}
+            />
           )}
 
           {/* Selected Stop Details */}
-          {selectedStop && (
-            <div className="absolute bottom-4 left-4 right-4 max-w-md bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-xl p-4 shadow-xl">
-              <div className="flex items-start justify-between mb-2">
-                <h4 className="font-semibold text-white">Traffic Stop Details</h4>
-                <button
-                  onClick={() => setSelectedStop(null)}
-                  className="text-zinc-400 hover:text-white"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              {/* Description */}
-              {selectedStop.description && (
-                <div className="mb-3 pb-3 border-b border-zinc-700">
-                  <p className="text-sm text-zinc-300 leading-relaxed">
-                    {String(selectedStop.description)}
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-zinc-400">Type:</span>
-                  <span className="ml-2 text-white">{String(selectedStop.violationType)}</span>
-                </div>
-                {selectedStop.vehicle ? (
-                  <div>
-                    <span className="text-zinc-400">Vehicle:</span>
-                    <span className="ml-2 text-white">{String(selectedStop.vehicle)}</span>
-                  </div>
-                ) : null}
-                {selectedStop.subAgency ? (
-                  <div className="col-span-2">
-                    <span className="text-zinc-400">District:</span>
-                    <span className="ml-2 text-white">{String(selectedStop.subAgency)}</span>
-                  </div>
-                ) : null}
-                {selectedStop.alcohol ? (
-                  <div className="col-span-2">
-                    <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded">Alcohol Related</span>
-                  </div>
-                ) : null}
-                {selectedStop.accident ? (
-                  <div className="col-span-2">
-                    <span className="px-2 py-0.5 bg-violet-500/20 text-violet-400 text-xs rounded">Accident</span>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          )}
+          <StopDetailsPopup
+            stop={selectedStop}
+            onClose={() => setSelectedStop(null)}
+          />
           
           {/* Selected Speed Trap Details */}
-          {selectedTrap && (
-            <div className="absolute bottom-4 left-4 right-4 max-w-md bg-zinc-900/95 backdrop-blur-sm border border-red-800/50 rounded-xl p-4 shadow-xl">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Target className="text-red-500" size={20} />
-                  <h4 className="font-semibold text-white">Speed Trap Location</h4>
-                </div>
-                <button 
-                  onClick={() => setSelectedTrap(null)}
-                  className="text-zinc-400 hover:text-white"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-zinc-800/50 rounded-lg p-2.5">
-                  <p className="text-zinc-400 text-xs mb-1">Trap Score</p>
-                  <p className="text-2xl font-bold text-red-500">
-                    {selectedTrap.trapScore ? Number(selectedTrap.trapScore).toFixed(0) : 'N/A'}
-                  </p>
-                </div>
-                <div className="bg-zinc-800/50 rounded-lg p-2.5">
-                  <p className="text-zinc-400 text-xs mb-1">Total Stops</p>
-                  <p className="text-2xl font-bold text-white">
-                    {selectedTrap.stopCount ? Number(selectedTrap.stopCount) : 'N/A'}
-                  </p>
-                </div>
-                <div className="bg-zinc-800/50 rounded-lg p-2.5">
-                  <p className="text-zinc-400 text-xs mb-1">Unique Days</p>
-                  <p className="text-lg font-semibold text-white">
-                    {selectedTrap.uniqueDays ? Number(selectedTrap.uniqueDays) : 'N/A'}
-                  </p>
-                </div>
-                <div className="bg-zinc-800/50 rounded-lg p-2.5">
-                  <p className="text-zinc-400 text-xs mb-1">Avg. Speed Over</p>
-                  <p className="text-lg font-semibold text-violet-400">
-                    {selectedTrap.avgSpeedOver ? `+${Number(selectedTrap.avgSpeedOver)} mph` : 'N/A'}
-                  </p>
-                </div>
-                {selectedTrap.maxSpeedOver && (
-                  <div className="bg-zinc-800/50 rounded-lg p-2.5">
-                    <p className="text-zinc-400 text-xs mb-1">Max Speed Over</p>
-                    <p className="text-lg font-semibold text-red-400">
-                      +{Number(selectedTrap.maxSpeedOver)} mph
-                    </p>
-                  </div>
-                )}
-                {selectedTrap.primaryMethod && (
-                  <div className="bg-zinc-800/50 rounded-lg p-2.5">
-                    <p className="text-zinc-400 text-xs mb-1">Detection</p>
-                    <p className="text-lg font-semibold text-white capitalize">
-                      {String(selectedTrap.primaryMethod)}
-                    </p>
-                  </div>
-                )}
-                {selectedTrap.location && (
-                  <div className="col-span-2 bg-zinc-800/50 rounded-lg p-2.5">
-                    <p className="text-zinc-400 text-xs mb-1">Location</p>
-                    <p className="text-white text-sm">
-                      {String(selectedTrap.location)}
-                    </p>
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-zinc-500 mt-3">
-                ⚠️ High speed enforcement area - {selectedTrap.stopCount || 0} stops over {selectedTrap.uniqueDays || 0} days
-              </p>
-            </div>
-          )}
+          <SpeedTrapPopup
+            trap={selectedTrap}
+            onClose={() => setSelectedTrap(null)}
+          />
           
           {/* Error Message */}
           {drillDownError && (
@@ -774,30 +515,7 @@ export default function AnalyticsPage() {
           )}
 
           {/* Map Legend */}
-          <div className="absolute bottom-4 right-4 bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 rounded-lg p-3 text-xs">
-            <p className="text-zinc-400 mb-2 font-medium">Clusters → Individual at zoom 13+</p>
-            <div className="space-y-1.5">
-              <p className="text-zinc-500 text-[10px] uppercase tracking-wide">Cluster Size</p>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-[#22d3ee]" />
-                  <span className="text-zinc-400">10</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-[#8b5cf6]" />
-                  <span className="text-zinc-400">100</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-[#a855f7]" />
-                  <span className="text-zinc-400">500</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-[#ef4444]" />
-                  <span className="text-zinc-400">1K+</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <MapLegend />
         </div>
       </div>
 

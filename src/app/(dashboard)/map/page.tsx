@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MapProvider, BaseMap, FriendMarker, PoliceMarker, HeatmapLayer, SpeedTrapLayer, PatternMarkersLayer, CarSpottingLayer } from '@/components/map';
+import { MapProvider, BaseMap, FriendMarker, PoliceMarker, HeatmapLayer, SpeedTrapLayer, PatternMarkersLayer, CarSpottingLayer, SpeedTrapPopup, type SpeedTrapDetails } from '@/components/map';
 import { Button } from '@/components/ui';
 import { PredictionPanel } from '@/components/analytics';
 import { useGeolocation } from '@/hooks';
@@ -75,7 +75,7 @@ export default function MapPage() {
   const [showCarSpottings, setShowCarSpottings] = useState(false);
   const [heatmapData, setHeatmapData] = useState<GeoJSON.FeatureCollection | null>(null);
   const [selectedFriend, setSelectedFriend] = useState<LiveUserPin | null>(null);
-  const [selectedTrap, setSelectedTrap] = useState<Record<string, unknown> | null>(null);
+  const [selectedTrap, setSelectedTrap] = useState<SpeedTrapDetails | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
 
   // ML Pattern state
@@ -134,11 +134,6 @@ export default function MapPage() {
     ? [location.longitude, location.latitude] 
     : [-118.2437, 34.0522]; // LA default
   
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MapPage.tsx:render',message:'MAP_PAGE_RENDER_V6',data:{showSpeedTraps,selectedTrap:!!selectedTrap,selectedFriend:!!selectedFriend,codeVersion:'v6-feb4'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F',runId:'post-fix-6'})}).catch(()=>{});
-  console.log('[DEBUG-V6] MapPage render - showSpeedTraps:', showSpeedTraps);
-  // #endregion
-
   const handleToggleBroadcast = useCallback(() => {
     setBroadcasting(!isBroadcasting);
     // TODO: Connect to Socket.io to broadcast location
@@ -150,7 +145,6 @@ export default function MapPage() {
 
   const handleAlertClick = useCallback((alert: PoliceAlert) => {
     // TODO: Show alert details / confirm modal
-    console.log('Alert clicked:', alert);
   }, []);
 
   return (
@@ -193,12 +187,8 @@ export default function MapPage() {
             visible={showSpeedTraps}
             minStops={5}
             onTrapClick={(props) => {
-              // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/8ecbc98d-1e8e-44c9-8f10-253e23d24891',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MapPage.tsx:onTrapClick',message:'TRAP PIN CLICKED',data:{props:JSON.stringify(props).slice(0,200)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'R',runId:'post-fix-7'})}).catch(()=>{});
-              console.log('[DEBUG-V7] Trap pin clicked:', props);
-              // #endregion
-              setSelectedTrap(props);
-              setSelectedFriend(null); // Close other panels
+              setSelectedTrap(props as SpeedTrapDetails);
+              setSelectedFriend(null);
             }}
           />
 
@@ -206,9 +196,8 @@ export default function MapPage() {
           <PatternMarkersLayer
             visible={showPatterns}
             selectedPatternId={selectedPatternId}
-            onPatternLocationClick={(loc, pattern) => {
-              console.log('Pattern location clicked:', loc, pattern);
-              // Could open a detail panel here
+            onPatternLocationClick={() => {
+              // TODO: Open a detail panel for pattern location
             }}
           />
 
@@ -216,8 +205,6 @@ export default function MapPage() {
           <CarSpottingLayer
             visible={showCarSpottings}
             onSpotClick={(spot) => {
-              console.log('Car spotting clicked:', spot);
-              // Could open a detail panel here or navigate to the spotting page
               window.open(`/spotting?highlight=${spot.id}`, '_blank');
             }}
           />
@@ -540,70 +527,10 @@ export default function MapPage() {
         )}
 
         {/* Selected speed trap panel */}
-        {selectedTrap && (
-          <div className="absolute top-20 left-4 w-80 bg-zinc-900/95 backdrop-blur-sm rounded-xl border border-red-800/50 p-4 shadow-xl animate-fade-in">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <Target size={24} className="text-red-500" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white">Speed Trap</h3>
-                  <p className="text-sm text-zinc-400">Historical enforcement zone</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setSelectedTrap(null)}
-                className="p-1 hover:bg-zinc-800 rounded transition-colors"
-              >
-                <X size={18} className="text-zinc-400" />
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-              <div className="bg-zinc-800/50 rounded-lg p-2">
-                <p className="text-zinc-400 text-xs">Trap Score</p>
-                <p className="text-xl font-bold text-red-500">
-                  {selectedTrap.trapScore ? Number(selectedTrap.trapScore).toFixed(0) : 'N/A'}
-                </p>
-              </div>
-              <div className="bg-zinc-800/50 rounded-lg p-2">
-                <p className="text-zinc-400 text-xs">Total Stops</p>
-                <p className="text-xl font-bold text-white">
-                  {selectedTrap.stopCount ? Number(selectedTrap.stopCount) : 'N/A'}
-                </p>
-              </div>
-              {selectedTrap.avgSpeedOver && (
-                <div className="bg-zinc-800/50 rounded-lg p-2">
-                  <p className="text-zinc-400 text-xs">Avg Speed Over</p>
-                  <p className="text-lg font-semibold text-violet-400">
-                    +{Number(selectedTrap.avgSpeedOver)} mph
-                  </p>
-                </div>
-              )}
-              {selectedTrap.primaryMethod && (
-                <div className="bg-zinc-800/50 rounded-lg p-2">
-                  <p className="text-zinc-400 text-xs">Detection</p>
-                  <p className="text-lg font-semibold text-white capitalize">
-                    {String(selectedTrap.primaryMethod)}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {selectedTrap.location && (
-              <div className="text-sm text-zinc-400 mb-3">
-                <span className="text-zinc-500">Location:</span>{' '}
-                <span className="text-zinc-300">{String(selectedTrap.location)}</span>
-              </div>
-            )}
-
-            <div className="text-xs text-zinc-500 flex items-center gap-1">
-              <AlertTriangle size={12} className="text-red-500" />
-              High enforcement area - drive carefully
-            </div>
-          </div>
-        )}
+        <SpeedTrapPopup
+          trap={selectedTrap}
+          onClose={() => setSelectedTrap(null)}
+        />
 
         {/* Report modal */}
         {showReportModal && (
@@ -629,9 +556,8 @@ function ReportModal({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = () => {
     if (!reportType || !location) return;
-    
+
     // TODO: Submit report via API
-    console.log('Report:', { reportType, description, location });
     onClose();
   };
 

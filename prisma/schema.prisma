@@ -159,29 +159,41 @@ enum FriendshipStatus {
 model Route {
   id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   creatorId     String          @map("creator_id") @db.Uuid
-  
+
   name          String          @db.VarChar(100)
   description   String?         @db.Text
-  
+
   // Route geometry stored as JSON array of coordinates
   // Format: [[lng, lat], [lng, lat], ...]
   pathCoordinates Json          @map("path_coordinates")
-  
+
+  // User-placed waypoints for editing (different from full path)
+  // Format: [{ lng, lat, order }]
+  waypoints       Json?         @map("waypoints")
+
   // Route metadata
   distanceMiles   Float         @map("distance_miles")
   elevationGain   Int?          @map("elevation_gain")
   estimatedTime   Int?          @map("estimated_time") // in minutes
+  durationSeconds Int?          @map("duration_seconds") // From Directions API
   difficulty      Difficulty    @default(MODERATE)
-  
+
+  // Turn-by-turn directions from Mapbox API (optional)
+  directions      Json?         @map("directions")
+
+  // Creation metadata
+  creationMethod  String?       @map("creation_method") @db.VarChar(20) // 'manual' | 'recorded' | 'imported'
+  rawRecordedPath Json?         @map("raw_recorded_path") // Original GPS trace before matching
+
   // Discovery
   tags          String[]        @default([])
   driveCount    Int             @default(0) @map("drive_count")
   avgRating     Float           @default(0) @map("avg_rating")
-  
+
   // Visibility
   isPublic      Boolean         @default(true) @map("is_public")
   isFeatured    Boolean         @default(false) @map("is_featured")
-  
+
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
@@ -195,6 +207,7 @@ model Route {
   @@index([isPublic, isFeatured])
   @@index([avgRating])
   @@index([driveCount])
+  @@index([creationMethod])
   @@map("routes")
 }
 
