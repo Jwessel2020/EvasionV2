@@ -51,7 +51,27 @@ export interface IForumUser extends Document {
   isBanned: boolean;
   banReason?: string;
   banExpiresAt?: Date;
-  
+
+  // Marketplace
+  marketplaceStats: {
+    listingsCount: number;
+    activeListings: number;
+    soldCount: number;
+    totalSales: number;
+    averageRating: number;
+    reviewCount: number;
+  };
+  marketplaceSettings: {
+    defaultLocation?: {
+      city?: string;
+      state?: string;
+      country: string;
+    };
+    shipsTo: string[];
+    acceptsOffers: boolean;
+    responseTime?: string;
+  };
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
@@ -107,15 +127,35 @@ const ForumUserSchema = new Schema<IForumUser>(
       showGarage: { type: Boolean, default: true },
     },
     
-    role: { 
-      type: String, 
-      enum: ['member', 'moderator', 'admin'], 
-      default: 'member' 
+    role: {
+      type: String,
+      enum: ['member', 'moderator', 'admin'],
+      default: 'member'
     },
     isBanned: { type: Boolean, default: false },
     banReason: String,
     banExpiresAt: Date,
-    
+
+    // Marketplace fields
+    marketplaceStats: {
+      listingsCount: { type: Number, default: 0 },
+      activeListings: { type: Number, default: 0 },
+      soldCount: { type: Number, default: 0 },
+      totalSales: { type: Number, default: 0 },
+      averageRating: { type: Number, default: 0 },
+      reviewCount: { type: Number, default: 0 },
+    },
+    marketplaceSettings: {
+      defaultLocation: {
+        city: String,
+        state: String,
+        country: { type: String, default: 'US' },
+      },
+      shipsTo: [{ type: String }],
+      acceptsOffers: { type: Boolean, default: true },
+      responseTime: String,
+    },
+
     lastActiveAt: { type: Date, default: Date.now },
   },
   { 

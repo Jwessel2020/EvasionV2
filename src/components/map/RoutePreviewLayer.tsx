@@ -155,15 +155,21 @@ export function RoutePreviewLayer({
         cancelAnimationFrame(animationRef.current);
       }
 
-      // Clean up layers
-      [mainLayerId, outlineLayerId, casingLayerId].forEach((layerId) => {
-        if (map.getLayer(layerId)) {
-          map.removeLayer(layerId);
-        }
-      });
+      if (!map) return;
 
-      if (map.getSource(sourceId)) {
-        map.removeSource(sourceId);
+      try {
+        // Clean up layers
+        [mainLayerId, outlineLayerId, casingLayerId].forEach((layerId) => {
+          if (map.getLayer(layerId)) {
+            map.removeLayer(layerId);
+          }
+        });
+
+        if (map.getSource(sourceId)) {
+          map.removeSource(sourceId);
+        }
+      } catch {
+        // Map style already destroyed during navigation
       }
     };
   }, [map, isLoaded, id, coordinates, isCalculating, color, outlineColor, width, outlineWidth, opacity]);

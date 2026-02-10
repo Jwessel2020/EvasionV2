@@ -177,7 +177,8 @@ export default function CreateRoutePage() {
       if (response.ok) {
         router.push('/routes');
       } else {
-        console.error('Failed to save route');
+        const errorData = await response.json().catch(() => null);
+        console.error('Failed to save route:', response.status, errorData);
         setIsSaving(false);
       }
     } catch (err) {

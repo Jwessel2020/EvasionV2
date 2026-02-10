@@ -58,7 +58,7 @@ export function validateFile(file: File): FileValidation {
 /**
  * Generate unique file path for storage
  */
-function generateFilePath(userId: string, fileName: string, type: 'image' | 'video'): string {
+function generateFilePath(userId: string, fileName: string, type: 'image' | 'video' | 'unknown'): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 8);
   const ext = fileName.split('.').pop()?.toLowerCase() || 'jpg';

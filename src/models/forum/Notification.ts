@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export type NotificationType = 
+export type NotificationType =
+  // Forum notifications
   | 'new_follower'
   | 'thread_reply'
   | 'comment_reply'
@@ -13,7 +14,19 @@ export type NotificationType =
   | 'group_request_approved'
   | 'group_request_rejected'
   | 'mod_warning'
-  | 'badge_earned';
+  | 'badge_earned'
+  // Marketplace notifications
+  | 'new_message'
+  | 'offer_received'
+  | 'offer_accepted'
+  | 'offer_rejected'
+  | 'offer_countered'
+  | 'offer_response'
+  | 'listing_sold'
+  | 'price_drop'
+  | 'order_status'
+  | 'review_received'
+  | 'review_response';
 
 export interface INotification extends Document {
   // Recipient
@@ -54,9 +67,10 @@ const NotificationSchema = new Schema<INotification>(
   {
     recipient: { type: Schema.Types.ObjectId, ref: 'ForumUser', required: true, index: true },
     
-    type: { 
-      type: String, 
+    type: {
+      type: String,
       enum: [
+        // Forum notifications
         'new_follower',
         'thread_reply',
         'comment_reply',
@@ -70,6 +84,18 @@ const NotificationSchema = new Schema<INotification>(
         'group_request_rejected',
         'mod_warning',
         'badge_earned',
+        // Marketplace notifications
+        'new_message',
+        'offer_received',
+        'offer_accepted',
+        'offer_rejected',
+        'offer_countered',
+        'offer_response',
+        'listing_sold',
+        'price_drop',
+        'order_status',
+        'review_received',
+        'review_response',
       ],
       required: true
     },

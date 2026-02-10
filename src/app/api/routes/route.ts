@@ -8,11 +8,14 @@ const createRouteSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(2000).optional(),
   pathCoordinates: z.array(z.tuple([z.number(), z.number()])).min(2),
+  waypoints: z.array(z.object({ lng: z.number(), lat: z.number(), order: z.number() })).optional(),
   distanceMiles: z.number().positive(),
+  durationSeconds: z.number().optional(),
   elevationGain: z.number().optional(),
   estimatedTime: z.number().optional(),
   difficulty: z.enum(['EASY', 'MODERATE', 'CHALLENGING', 'EXPERT']),
   tags: z.array(z.string()).optional(),
+  creationMethod: z.enum(['manual', 'recorded']).optional(),
   isPublic: z.boolean().optional().default(true),
 });
 
@@ -103,14 +106,42 @@ export async function GET(request: NextRequest) {
 // POST /api/routes - Create a new route
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const isDev = process.env.NODE_ENV === 'development';
+    let userId = '';
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (isDev) {
+      try {
+        const supabase = await createServerSupabaseClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) userId = user.id;
+      } catch {
+        // Supabase auth failed in dev
+      }
+      if (!userId) {
+        userId = '00000000-0000-0000-0000-000000000001';
+        // Ensure dev user exists in DB
+        await prisma.user.upsert({
+          where: { id: userId },
+          update: {},
+          create: {
+            id: userId,
+            email: 'test@evasion.dev',
+            username: 'testdriver',
+            displayName: 'Test Driver',
+            dateOfBirth: new Date('2000-01-01'),
+          },
+        });
+      }
+    } else {
+      const supabase = await createServerSupabaseClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+      userId = user.id;
     }
 
     const body = await request.json();
@@ -128,15 +159,18 @@ export async function POST(request: NextRequest) {
     // Create the route
     const route = await prisma.route.create({
       data: {
-        creatorId: user.id,
+        creatorId: userId,
         name: data.name,
         description: data.description,
         pathCoordinates: data.pathCoordinates,
+        waypoints: data.waypoints || [],
         distanceMiles: data.distanceMiles,
-        elevationGain: data.elevationGain,
+        durationSeconds: data.durationSeconds,
         estimatedTime: data.estimatedTime,
+        elevationGain: data.elevationGain,
         difficulty: data.difficulty,
         tags: data.tags || [],
+        creationMethod: data.creationMethod,
         isPublic: data.isPublic,
       },
       include: {

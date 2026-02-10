@@ -592,7 +592,7 @@ export default function InsightsPage() {
                     />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }}
-                      formatter={(value: number) => [`${value}%`, 'Percentage']}
+                      formatter={(value) => [`${value}%`, 'Percentage']}
                     />
                     <Bar dataKey="percentage" radius={[4, 4, 0, 0]}>
                       {thresholds.overall.distribution.map((entry, index) => (

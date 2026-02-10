@@ -22,8 +22,11 @@ interface PoliceStopsLayerProps {
     minSpeedOver?: number | null;
     speedTrapsOnly?: boolean | null;
     vehicleMake?: string | null;
-    // Vehicle marking filter
+    // Search & vehicle marking filters
+    searchConducted?: boolean | null;
     vehicleMarking?: 'marked' | 'unmarked' | null;
+    // Prediction layer (handled by PredictionLayer, not this component)
+    showPredictions?: boolean | null;
   };
   onStopClick?: (properties: Record<string, unknown>) => void;
 }

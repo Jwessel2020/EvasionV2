@@ -1,14 +1,14 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { 
-  Home, 
-  MessageSquare, 
-  Users, 
-  Compass, 
-  Bell, 
+import {
+  Home,
+  MessageSquare,
+  Users,
+  Compass,
+  Bell,
   Search,
   Plus,
   Menu,
@@ -36,7 +36,7 @@ const quickFilters = [
   { href: '/forums?sort=top', label: 'Top', icon: Star },
 ];
 
-export default function ForumsLayout({ children }: ForumsLayoutProps) {
+function ForumsLayoutContent({ children }: ForumsLayoutProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentSort = searchParams.get('sort');
@@ -189,5 +189,13 @@ export default function ForumsLayout({ children }: ForumsLayoutProps) {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function ForumsLayout({ children }: ForumsLayoutProps) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+      <ForumsLayoutContent>{children}</ForumsLayoutContent>
+    </Suspense>
   );
 }

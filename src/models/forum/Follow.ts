@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export type FollowTarget = 'user' | 'board' | 'group' | 'thread';
+export type FollowTarget = 'user' | 'board' | 'group' | 'thread' | 'shop';
 
 export interface IFollow extends Document {
   // Who is following
@@ -14,6 +14,7 @@ export interface IFollow extends Document {
   targetBoard?: mongoose.Types.ObjectId;
   targetGroup?: mongoose.Types.ObjectId;
   targetThread?: mongoose.Types.ObjectId;
+  targetShop?: mongoose.Types.ObjectId;
   
   // Notification preferences for this follow
   notifications: {
@@ -30,16 +31,17 @@ const FollowSchema = new Schema<IFollow>(
   {
     follower: { type: Schema.Types.ObjectId, ref: 'ForumUser', required: true },
     
-    targetType: { 
-      type: String, 
-      enum: ['user', 'board', 'group', 'thread'],
+    targetType: {
+      type: String,
+      enum: ['user', 'board', 'group', 'thread', 'shop'],
       required: true
     },
-    
+
     targetUser: { type: Schema.Types.ObjectId, ref: 'ForumUser' },
     targetBoard: { type: Schema.Types.ObjectId, ref: 'Board' },
     targetGroup: { type: Schema.Types.ObjectId, ref: 'Group' },
     targetThread: { type: Schema.Types.ObjectId, ref: 'Thread' },
+    targetShop: { type: Schema.Types.ObjectId, ref: 'Shop' },
     
     notifications: {
       newThreads: { type: Boolean, default: true },
@@ -57,12 +59,14 @@ FollowSchema.index({ follower: 1, targetType: 1, targetUser: 1 }, { unique: true
 FollowSchema.index({ follower: 1, targetType: 1, targetBoard: 1 }, { unique: true, sparse: true });
 FollowSchema.index({ follower: 1, targetType: 1, targetGroup: 1 }, { unique: true, sparse: true });
 FollowSchema.index({ follower: 1, targetType: 1, targetThread: 1 }, { unique: true, sparse: true });
+FollowSchema.index({ follower: 1, targetType: 1, targetShop: 1 }, { unique: true, sparse: true });
 
 // For getting followers of a target
 FollowSchema.index({ targetUser: 1, createdAt: -1 });
 FollowSchema.index({ targetBoard: 1, createdAt: -1 });
 FollowSchema.index({ targetGroup: 1, createdAt: -1 });
 FollowSchema.index({ targetThread: 1, createdAt: -1 });
+FollowSchema.index({ targetShop: 1, createdAt: -1 });
 
 // For getting what a user follows
 FollowSchema.index({ follower: 1, targetType: 1, createdAt: -1 });

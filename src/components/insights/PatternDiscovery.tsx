@@ -155,9 +155,9 @@ export function PatternDiscovery({ onLocationClick }: PatternDiscoveryProps) {
           </div>
         ) : (
           <div className="space-y-3">
-            {patterns.map((pattern) => (
+            {patterns.map((pattern, index) => (
               <div
-                key={pattern.patternId}
+                key={pattern.patternId || `pattern-${index}`}
                 className={`rounded-lg border ${PATTERN_COLORS[pattern.patternType] || 'border-gray-700 bg-gray-800'}`}
               >
                 {/* Pattern Header */}

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui';
-import { 
-  Filter, 
-  X, 
-  ChevronDown, 
+import { Button, FilterSection, FilterSelect, QuickToggle } from '@/components/ui';
+import {
+  Filter,
+  X,
+  ChevronDown,
   ChevronUp,
   AlertTriangle,
   Car,
@@ -18,6 +18,15 @@ import {
   Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  VIOLATION_TYPES,
+  DAYS_FILTER,
+  TIME_RANGES,
+  DETECTION_METHODS,
+  SPEED_OVER_OPTIONS,
+  YEARS_FILTER,
+  POINT_COLORS,
+} from '@/lib/analytics-constants';
 
 export interface MapFilters {
   violationType: string | null;
@@ -27,16 +36,13 @@ export interface MapFilters {
   hourEnd: number | null;
   dayOfWeek: number | null;
   year: number | null;
-  // Speed-related filters
   speedOnly: boolean | null;
-  detectionMethod: string | null; // radar, laser, vascar, patrol
+  detectionMethod: string | null;
   minSpeedOver: number | null;
-  speedTrapsOnly: boolean | null; // Show only likely speed trap locations
+  speedTrapsOnly: boolean | null;
   vehicleMake: string | null;
   searchConducted: boolean | null;
-  // Vehicle marking filter
   vehicleMarking: 'marked' | 'unmarked' | null;
-  // ML Prediction overlay
   showPredictions: boolean | null;
 }
 
@@ -46,62 +52,6 @@ interface MapFilterPanelProps {
   className?: string;
   vehicleMakes?: Array<{ make: string; count: number }>;
 }
-
-const VIOLATION_TYPES = [
-  { value: null, label: 'All Types' },
-  { value: 'Citation', label: 'Citation' },
-  { value: 'Warning', label: 'Warning' },
-  { value: 'ESERO', label: 'ESERO' },
-];
-
-const DAYS = [
-  { value: null, label: 'All Days' },
-  { value: 0, label: 'Sunday' },
-  { value: 1, label: 'Monday' },
-  { value: 2, label: 'Tuesday' },
-  { value: 3, label: 'Wednesday' },
-  { value: 4, label: 'Thursday' },
-  { value: 5, label: 'Friday' },
-  { value: 6, label: 'Saturday' },
-];
-
-const TIME_RANGES = [
-  { value: null, label: 'All Hours' },
-  { value: [0, 5], label: 'Late Night (12am-6am)' },
-  { value: [6, 9], label: 'Morning Rush (6am-10am)' },
-  { value: [10, 14], label: 'Midday (10am-3pm)' },
-  { value: [15, 18], label: 'Evening Rush (3pm-7pm)' },
-  { value: [19, 23], label: 'Night (7pm-12am)' },
-];
-
-const DETECTION_METHODS = [
-  { value: null, label: 'All Methods' },
-  { value: 'radar', label: '📡 Radar' },
-  { value: 'laser', label: '⚡ Laser' },
-  { value: 'vascar', label: '⏱️ VASCAR' },
-  { value: 'patrol', label: '🚔 Patrol' },
-];
-
-const SPEED_OVER_OPTIONS = [
-  { value: null, label: 'Any Speed' },
-  { value: 10, label: '10+ mph over' },
-  { value: 15, label: '15+ mph over' },
-  { value: 20, label: '20+ mph over' },
-  { value: 25, label: '25+ mph over' },
-  { value: 30, label: '30+ mph over' },
-];
-
-// Removed hardcoded VEHICLE_MAKES - now passed as prop from parent
-
-// Generate years from current year back to 2012 (typical data range)
-const currentYear = new Date().getFullYear();
-const YEARS = [
-  { value: null, label: 'All Years' },
-  ...Array.from({ length: currentYear - 2011 }, (_, i) => ({
-    value: currentYear - i,
-    label: (currentYear - i).toString(),
-  })),
-];
 
 export function MapFilterPanel({
   filters,
@@ -116,25 +66,38 @@ export function MapFilterPanel({
     { value: null, label: 'All Makes' },
     ...vehicleMakes.map(vm => ({
       value: vm.make,
-      label: vm.make.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' '), // Proper case
+      label: vm.make.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' '),
     })),
   ];
 
-  const activeFilterCount = [
+  // Count active filters per section
+  const basicFilterCount = [
     filters.violationType,
     filters.hasAlcohol,
     filters.hasAccident,
-    filters.hourStart !== null,
-    filters.dayOfWeek !== null,
-    filters.year !== null,
+    filters.searchConducted,
+    filters.vehicleMarking,
+  ].filter(Boolean).length;
+
+  const speedFilterCount = [
     filters.speedOnly,
     filters.detectionMethod,
     filters.minSpeedOver !== null,
     filters.speedTrapsOnly,
-    filters.vehicleMake,
-    filters.searchConducted,
-    filters.vehicleMarking,
   ].filter(Boolean).length;
+
+  const timeFilterCount = [
+    filters.hourStart !== null,
+    filters.dayOfWeek !== null,
+    filters.year !== null,
+  ].filter(Boolean).length;
+
+  const advancedFilterCount = [
+    filters.vehicleMake,
+    filters.showPredictions,
+  ].filter(Boolean).length;
+
+  const totalFilterCount = basicFilterCount + speedFilterCount + timeFilterCount + advancedFilterCount;
 
   const clearFilters = () => {
     onFiltersChange({
@@ -163,21 +126,21 @@ export function MapFilterPanel({
   return (
     <div
       className={cn(
-        'bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-xl shadow-xl overflow-hidden',
+        'bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-xl shadow-xl overflow-hidden max-h-[80vh] flex flex-col',
         className
       )}
     >
       {/* Header */}
       <button
-        className="w-full p-3 flex items-center justify-between hover:bg-zinc-800/50 transition-colors"
+        className="w-full p-3 flex items-center justify-between hover:bg-zinc-800/50 transition-colors flex-shrink-0"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
           <Filter size={18} className="text-violet-500" />
           <span className="font-medium text-white">Filters</span>
-          {activeFilterCount > 0 && (
+          {totalFilterCount > 0 && (
             <span className="px-2 py-0.5 bg-violet-500/20 text-violet-400 text-xs rounded-full">
-              {activeFilterCount}
+              {totalFilterCount}
             </span>
           )}
         </div>
@@ -190,341 +153,228 @@ export function MapFilterPanel({
 
       {/* Expanded content */}
       {isExpanded && (
-        <div className="p-3 pt-0 space-y-4 border-t border-zinc-800">
-          {/* Violation Type */}
-          <div>
-            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-              <Car size={12} />
-              Violation Type
-            </label>
-            <select
-              value={filters.violationType || ''}
-              onChange={(e) => updateFilter('violationType', e.target.value || null)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              {VIOLATION_TYPES.map((type) => (
-                <option key={type.label} value={type.value || ''}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="overflow-y-auto flex-1 border-t border-zinc-800">
+          {/* Basic Filters Section */}
+          <FilterSection title="Basic Filters" icon={AlertTriangle} badge={basicFilterCount} defaultOpen={true}>
+            {/* Violation Type */}
+            <FilterSelect
+              options={VIOLATION_TYPES}
+              value={filters.violationType}
+              onChange={(v) => updateFilter('violationType', v as string | null)}
+              icon={Car}
+              label="Violation Type"
+            />
 
-          {/* Quick Filters */}
-          <div>
-            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-              <AlertTriangle size={12} />
-              Incident Type
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => updateFilter('hasAlcohol', filters.hasAlcohol === true ? null : true)}
-                className={cn(
-                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
-                  filters.hasAlcohol === true
-                    ? 'bg-red-500/20 border-red-500/50 text-red-400'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                )}
-              >
-                🍺 Alcohol
-              </button>
-              <button
-                onClick={() => updateFilter('hasAccident', filters.hasAccident === true ? null : true)}
-                className={cn(
-                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
-                  filters.hasAccident === true
-                    ? 'bg-orange-500/20 border-orange-500/50 text-orange-400'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                )}
-              >
-                💥 Accident
-              </button>
-              <button
-                onClick={() => updateFilter('searchConducted', filters.searchConducted === true ? null : true)}
-                className={cn(
-                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
-                  filters.searchConducted === true
-                    ? 'bg-purple-500/20 border-purple-500/50 text-purple-400'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                )}
-              >
-                🔍 Search
-              </button>
-            </div>
-          </div>
-
-          {/* Vehicle Marking Filter */}
-          <div>
-            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-              <Car size={12} />
-              Vehicle Marking
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => updateFilter('vehicleMarking', filters.vehicleMarking === 'marked' ? null : 'marked')}
-                className={cn(
-                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
-                  filters.vehicleMarking === 'marked'
-                    ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                )}
-              >
-                🚔 Marked
-              </button>
-              <button
-                onClick={() => updateFilter('vehicleMarking', filters.vehicleMarking === 'unmarked' ? null : 'unmarked')}
-                className={cn(
-                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
-                  filters.vehicleMarking === 'unmarked'
-                    ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                    : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                )}
-              >
-                🚗 Unmarked
-              </button>
-            </div>
-          </div>
-
-          {/* ML Risk Prediction Toggle */}
-          <div>
-            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-              <MapPin size={12} />
-              AI Risk Prediction
-            </label>
-            <button
-              onClick={() => updateFilter('showPredictions', filters.showPredictions === true ? null : true)}
-              className={cn(
-                'w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border flex items-center justify-center gap-2',
-                filters.showPredictions === true
-                  ? 'bg-purple-500/20 border-purple-500/50 text-purple-400'
-                  : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-              )}
-            >
-              🔮 {filters.showPredictions ? 'Prediction Heatmap ON' : 'Show Risk Prediction'}
-            </button>
-            <p className="text-xs text-zinc-500 mt-1">
-              ML-based enforcement probability by location and time
-            </p>
-          </div>
-
-          {/* Speed Filter Toggle */}
-          <div>
-            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-              <Gauge size={12} />
-              Speed Violations
-            </label>
-            <button
-              onClick={() => updateFilter('speedOnly', filters.speedOnly === true ? null : true)}
-              className={cn(
-                'w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border flex items-center justify-center gap-2',
-                filters.speedOnly === true
-                  ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
-                  : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-              )}
-            >
-              <Gauge size={16} />
-              {filters.speedOnly ? 'Showing Speed Only' : 'Show Speed Violations Only'}
-            </button>
-          </div>
-
-          {/* Speed-specific filters (only shown when speedOnly is enabled) */}
-          {filters.speedOnly && (
-            <>
-              {/* Detection Method */}
-              <div>
-                <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-                  <Radio size={12} />
-                  Detection Method
-                </label>
-                <select
-                  value={filters.detectionMethod || ''}
-                  onChange={(e) => updateFilter('detectionMethod', e.target.value || null)}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {DETECTION_METHODS.map((method) => (
-                    <option key={method.label} value={method.value || ''}>
-                      {method.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Minimum Speed Over */}
-              <div>
-                <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-                  <Zap size={12} />
-                  Minimum Speed Over Limit
-                </label>
-                <select
-                  value={filters.minSpeedOver ?? ''}
-                  onChange={(e) => updateFilter('minSpeedOver', e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {SPEED_OVER_OPTIONS.map((opt) => (
-                    <option key={opt.label} value={opt.value ?? ''}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Speed Trap Detection */}
-              <div>
-                <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-                  <Target size={12} />
-                  Speed Trap Detection
-                </label>
+            {/* Quick Toggles - Incident Type */}
+            <div>
+              <label className="text-xs text-zinc-400 mb-1.5 block">Incident Type</label>
+              <div className="flex flex-wrap gap-1.5">
                 <button
-                  onClick={() => updateFilter('speedTrapsOnly', filters.speedTrapsOnly === true ? null : true)}
+                  onClick={() => updateFilter('hasAlcohol', filters.hasAlcohol === true ? null : true)}
                   className={cn(
-                    'w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border flex items-center justify-center gap-2',
-                    filters.speedTrapsOnly === true
+                    'px-2 py-1.5 rounded-lg text-xs font-medium transition-colors border',
+                    filters.hasAlcohol === true
                       ? 'bg-red-500/20 border-red-500/50 text-red-400'
                       : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
                   )}
                 >
-                  <Target size={16} />
-                  {filters.speedTrapsOnly ? 'Showing Speed Traps' : 'Show Likely Speed Traps'}
+                  🍺 Alcohol
                 </button>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Locations with stationary radar/laser and high stop frequency
-                </p>
+                <button
+                  onClick={() => updateFilter('hasAccident', filters.hasAccident === true ? null : true)}
+                  className={cn(
+                    'px-2 py-1.5 rounded-lg text-xs font-medium transition-colors border',
+                    filters.hasAccident === true
+                      ? 'bg-orange-500/20 border-orange-500/50 text-orange-400'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                  )}
+                >
+                  💥 Accident
+                </button>
+                <button
+                  onClick={() => updateFilter('searchConducted', filters.searchConducted === true ? null : true)}
+                  className={cn(
+                    'px-2 py-1.5 rounded-lg text-xs font-medium transition-colors border',
+                    filters.searchConducted === true
+                      ? 'bg-purple-500/20 border-purple-500/50 text-purple-400'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                  )}
+                >
+                  🔍 Search
+                </button>
               </div>
-            </>
-          )}
+            </div>
 
-          {/* Time Range */}
-          <div>
-            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-              <Clock size={12} />
-              Time of Day
-            </label>
-            <select
-              value={filters.hourStart !== null ? `${filters.hourStart}-${filters.hourEnd}` : ''}
-              onChange={(e) => {
-                if (!e.target.value) {
-                  updateFilter('hourStart', null);
+            {/* Vehicle Marking */}
+            <div>
+              <label className="text-xs text-zinc-400 mb-1.5 block">Police Vehicle</label>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => updateFilter('vehicleMarking', filters.vehicleMarking === 'marked' ? null : 'marked')}
+                  className={cn(
+                    'flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors border',
+                    filters.vehicleMarking === 'marked'
+                      ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                  )}
+                >
+                  🚔 Marked
+                </button>
+                <button
+                  onClick={() => updateFilter('vehicleMarking', filters.vehicleMarking === 'unmarked' ? null : 'unmarked')}
+                  className={cn(
+                    'flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors border',
+                    filters.vehicleMarking === 'unmarked'
+                      ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                  )}
+                >
+                  🚗 Unmarked
+                </button>
+              </div>
+            </div>
+          </FilterSection>
+
+          {/* Speed Filters Section */}
+          <FilterSection title="Speed Violations" icon={Gauge} badge={speedFilterCount} defaultOpen={false}>
+            <QuickToggle
+              isActive={filters.speedOnly === true}
+              onClick={() => updateFilter('speedOnly', filters.speedOnly === true ? null : true)}
+              icon={Gauge}
+              label={filters.speedOnly ? 'Showing Speed Only' : 'Show Speed Violations Only'}
+              activeColor="blue"
+            />
+
+            {filters.speedOnly && (
+              <>
+                <FilterSelect
+                  options={DETECTION_METHODS}
+                  value={filters.detectionMethod}
+                  onChange={(v) => updateFilter('detectionMethod', v as string | null)}
+                  icon={Radio}
+                  label="Detection Method"
+                />
+
+                <FilterSelect
+                  options={SPEED_OVER_OPTIONS}
+                  value={filters.minSpeedOver}
+                  onChange={(v) => updateFilter('minSpeedOver', v as number | null)}
+                  icon={Zap}
+                  label="Min Speed Over Limit"
+                />
+
+                <div>
+                  <QuickToggle
+                    isActive={filters.speedTrapsOnly === true}
+                    onClick={() => updateFilter('speedTrapsOnly', filters.speedTrapsOnly === true ? null : true)}
+                    icon={Target}
+                    label={filters.speedTrapsOnly ? 'Showing Speed Traps' : 'Show Likely Speed Traps'}
+                    activeColor="red"
+                  />
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Stationary radar/laser with high frequency
+                  </p>
+                </div>
+              </>
+            )}
+          </FilterSection>
+
+          {/* Time Filters Section */}
+          <FilterSection title="Time & Date" icon={Clock} badge={timeFilterCount} defaultOpen={false}>
+            <FilterSelect
+              options={TIME_RANGES.map(r => ({
+                value: r.value ? `${r.value[0]}-${r.value[1]}` : null,
+                label: r.label,
+              }))}
+              value={filters.hourStart !== null ? `${filters.hourStart}-${filters.hourEnd}` : null}
+              onChange={(v) => {
+                if (!v) {
                   onFiltersChange({ ...filters, hourStart: null, hourEnd: null });
                 } else {
-                  const [start, end] = e.target.value.split('-').map(Number);
+                  const [start, end] = String(v).split('-').map(Number);
                   onFiltersChange({ ...filters, hourStart: start, hourEnd: end });
                 }
               }}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              {TIME_RANGES.map((range) => (
-                <option 
-                  key={range.label} 
-                  value={range.value ? `${range.value[0]}-${range.value[1]}` : ''}
-                >
-                  {range.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              icon={Clock}
+              label="Time of Day"
+            />
 
-          {/* Day of Week */}
-          <div>
-            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-              <Calendar size={12} />
-              Day of Week
-            </label>
-            <select
-              value={filters.dayOfWeek ?? ''}
-              onChange={(e) => updateFilter('dayOfWeek', e.target.value ? parseInt(e.target.value) : null)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              {DAYS.map((day) => (
-                <option key={day.label} value={day.value ?? ''}>
-                  {day.label}
-                </option>
-              ))}
-            </select>
-          </div>
+            <FilterSelect
+              options={DAYS_FILTER}
+              value={filters.dayOfWeek}
+              onChange={(v) => updateFilter('dayOfWeek', v as number | null)}
+              icon={Calendar}
+              label="Day of Week"
+            />
 
-          {/* Year Filter */}
-          <div>
-            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-              <Calendar size={12} />
-              Year
-            </label>
-            <select
-              value={filters.year ?? ''}
-              onChange={(e) => updateFilter('year', e.target.value ? parseInt(e.target.value) : null)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              {YEARS.map((year) => (
-                <option key={year.label} value={year.value ?? ''}>
-                  {year.label}
-                </option>
-              ))}
-            </select>
-          </div>
+            <FilterSelect
+              options={YEARS_FILTER}
+              value={filters.year}
+              onChange={(v) => updateFilter('year', v as number | null)}
+              icon={Calendar}
+              label="Year"
+            />
+          </FilterSection>
 
-          {/* Vehicle Make Filter */}
-          <div>
-            <label className="text-xs text-zinc-400 mb-1.5 block flex items-center gap-1">
-              <Car size={12} />
-              Vehicle Make
-            </label>
-            <select
-              value={filters.vehicleMake ?? ''}
-              onChange={(e) => updateFilter('vehicleMake', e.target.value || null)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              {vehicleMakeOptions.map((make) => (
-                <option key={make.label} value={make.value ?? ''}>
-                  {make.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Advanced Section */}
+          <FilterSection title="Advanced" icon={Car} badge={advancedFilterCount} defaultOpen={false}>
+            <FilterSelect
+              options={vehicleMakeOptions}
+              value={filters.vehicleMake}
+              onChange={(v) => updateFilter('vehicleMake', v as string | null)}
+              icon={Car}
+              label="Vehicle Make"
+            />
 
-          {/* Clear Button */}
-          {activeFilterCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="w-full"
-            >
-              <X size={14} className="mr-1" />
-              Clear All Filters
-            </Button>
-          )}
+            <div>
+              <QuickToggle
+                isActive={filters.showPredictions === true}
+                onClick={() => updateFilter('showPredictions', filters.showPredictions === true ? null : true)}
+                icon="🔮"
+                label={filters.showPredictions ? 'Prediction Heatmap ON' : 'Show Risk Prediction'}
+                activeColor="purple"
+              />
+              <p className="text-xs text-zinc-500 mt-1">
+                ML-based enforcement probability
+              </p>
+            </div>
+          </FilterSection>
 
-          {/* Legend */}
-          <div className="pt-2 border-t border-zinc-800">
-            <p className="text-xs text-zinc-500 mb-2">Point Colors</p>
-            <div className="grid grid-cols-2 gap-1 text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-red-500" />
-                <span className="text-zinc-400">Alcohol</span>
+          {/* Clear Button & Legend */}
+          <div className="p-3 border-t border-zinc-800">
+            {totalFilterCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="w-full mb-3"
+              >
+                <X size={14} className="mr-1" />
+                Clear All Filters
+              </Button>
+            )}
+
+            {/* Compact Legend */}
+            <div className="text-xs">
+              <p className="text-zinc-500 mb-1.5">Point Colors</p>
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: POINT_COLORS.alcohol }} />
+                  <span className="text-zinc-400">Alcohol</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: POINT_COLORS.accident }} />
+                  <span className="text-zinc-400">Accident</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: POINT_COLORS.citation }} />
+                  <span className="text-zinc-400">Citation</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: POINT_COLORS.warning }} />
+                  <span className="text-zinc-400">Warning</span>
+                </span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-orange-500" />
-                <span className="text-zinc-400">Accident</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-blue-500" />
-                <span className="text-zinc-400">Citation</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-zinc-400">Warning</span>
-              </div>
-              {filters.speedOnly && (
-                <>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-cyan-500" />
-                    <span className="text-zinc-400">Speed (low)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <span className="text-zinc-400">Speed (high)</span>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </div>

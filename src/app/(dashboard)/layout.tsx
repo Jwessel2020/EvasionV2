@@ -21,6 +21,7 @@ import {
   BarChart3,
   Zap,
   Camera,
+  ShoppingBag,
 } from 'lucide-react';
 
 const navigation = [
@@ -31,6 +32,7 @@ const navigation = [
   { name: 'Insights', href: '/insights', icon: Zap },
   { name: 'Events', href: '/events', icon: Calendar },
   { name: 'Forums', href: '/forums', icon: MessageSquare },
+  { name: 'Marketplace', href: '/marketplace', icon: ShoppingBag },
   { name: 'Garage', href: '/garage', icon: Warehouse },
   { name: 'Profile', href: '/profile', icon: User },
 ];

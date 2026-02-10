@@ -114,13 +114,15 @@ export async function POST(
       
       for (const admin of admins) {
         await Notification.create({
-          userId: admin.userId,
+          recipient: admin.userId,
           type: 'group_invite',
-          title: 'New join request',
+          actor: forumUser._id,
+          actorUsername: forumUser.username,
+          actorAvatar: forumUser.avatar,
+          group: group._id,
+          groupName: group.name,
           message: `${forumUser.username} wants to join ${group.name}`,
-          link: `/forums/groups/${group.slug}/members`,
           data: {
-            groupId: group._id,
             requesterId: forumUser._id,
           },
         });
